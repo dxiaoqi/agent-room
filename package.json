@@ -1,0 +1,76 @@
+{
+  "name": "agent-room",
+  "version": "0.2.0",
+  "description": "AgentRoom — MCP tools for IDE/CLI + deployable real-time messaging service",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./service": {
+      "types": "./dist/service/index.d.ts",
+      "default": "./dist/service/index.js"
+    },
+    "./service/protocol": {
+      "types": "./dist/service/protocol.d.ts",
+      "default": "./dist/service/protocol.js"
+    }
+  },
+  "bin": {
+    "agent-room": "dist/index.js",
+    "agent-room-service": "dist/service/index.js",
+    "agent-room-cli": "dist/service/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build",
+    "service": "tsx src/service/index.ts",
+    "service:start": "node dist/service/index.js",
+    "service:cli": "tsx src/service/cli.ts",
+    "service:test": "tsx src/service/test.ts",
+    "test:echo-server": "tsx src/test/echo-server.ts",
+    "test:send-hello": "tsx src/test/send-hello.ts",
+    "test:reactive-test": "tsx src/test/reactive-test.ts"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "websocket",
+    "sse",
+    "stream",
+    "realtime",
+    "chat",
+    "service",
+    "ai-tools"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "eventsource": "^4.1.0",
+    "ws": "^8.19.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/inspector": "^0.19.0",
+    "@types/node": "^25.2.1",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
