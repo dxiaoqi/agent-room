@@ -156,11 +156,34 @@ export class ServiceWsServer {
         const done = log.time("auth", { name: name.trim() });
         const result = this._users.authenticate(ws, name.trim(), payload.token as string | undefined);
         if (result.success) {
-          done({ userId: result.userId });
-          Logger.metrics.increment("service.auth.success");
+          done({ userId: result.userId, reconnected: result.reconnected });
+
+          if (result.reconnected) {
+            Logger.metrics.increment("service.auth.reconnected");
+            log.info("session reconnected", {
+              name: name.trim(),
+              userId: result.userId,
+              restoredRooms: result.restoredRooms,
+            });
+
+            // Re-register the user in restored rooms in RoomManager
+            if (result.restoredRooms && result.restoredRooms.length > 0) {
+              for (const roomId of result.restoredRooms) {
+                if (this._rooms.has(roomId) && !this._rooms.isMember(roomId, result.userId)) {
+                  this._rooms.joinRoom(roomId, result.userId);
+                }
+              }
+            }
+          } else {
+            Logger.metrics.increment("service.auth.success");
+          }
+
           this._send(ws, responseMessage("auth", true, {
             user_id: result.userId,
             name: name.trim(),
+            token: result.token,
+            reconnected: result.reconnected ?? false,
+            restored_rooms: result.restoredRooms ?? [],
             rooms: this._rooms.listRooms(),
           }));
         } else {

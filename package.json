@@ -1,6 +1,6 @@
 {
   "name": "agent-room",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "AgentRoom — MCP tools for IDE/CLI + deployable real-time messaging service",
   "type": "module",
   "main": "dist/index.js",

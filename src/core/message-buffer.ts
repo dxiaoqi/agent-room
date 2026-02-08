@@ -6,10 +6,14 @@ const DEFAULT_MAX_SIZE = 50;
 /**
  * Sliding-window buffer that stores the most recent N messages per channel.
  * Automatically parses JSON payloads for structured display.
+ * Supports read-cursor tracking for unread message queries.
  */
 export class MessageBuffer {
   private _buffers = new Map<string, StreamMessage[]>();
   private _maxSize: number;
+
+  /** Tracks the last-read message ID per channel. Messages after this are "unread". */
+  private _readCursors = new Map<string, string>();
 
   constructor(maxSize: number = DEFAULT_MAX_SIZE) {
     this._maxSize = maxSize;
@@ -70,10 +74,56 @@ export class MessageBuffer {
   }
 
   /**
+   * Get unread messages for a channel (messages after the read cursor).
+   * Does NOT advance the cursor — call markAsRead() to advance it.
+   */
+  getUnread(channelId: string): StreamMessage[] {
+    const buffer = this._buffers.get(channelId);
+    if (!buffer || buffer.length === 0) return [];
+
+    const cursorId = this._readCursors.get(channelId);
+    if (!cursorId) {
+      // No cursor set → all messages are unread
+      return [...buffer];
+    }
+
+    const cursorIdx = buffer.findIndex((m) => m.id === cursorId);
+    if (cursorIdx === -1) {
+      // Cursor message was evicted from the window → all buffered messages are unread
+      return [...buffer];
+    }
+
+    // Return messages after the cursor
+    return buffer.slice(cursorIdx + 1);
+  }
+
+  /**
+   * Get count of unread messages for a channel.
+   */
+  getUnreadCount(channelId: string): number {
+    return this.getUnread(channelId).length;
+  }
+
+  /**
+   * Mark all current messages as read (advance cursor to latest).
+   * Returns the number of messages that were marked as read.
+   */
+  markAsRead(channelId: string): number {
+    const buffer = this._buffers.get(channelId);
+    if (!buffer || buffer.length === 0) return 0;
+
+    const unreadCount = this.getUnread(channelId).length;
+    const latest = buffer[buffer.length - 1];
+    this._readCursors.set(channelId, latest.id);
+    return unreadCount;
+  }
+
+  /**
    * Clear a channel's buffer.
    */
   clear(channelId: string): void {
     this._buffers.delete(channelId);
+    this._readCursors.delete(channelId);
   }
 
   /**
@@ -81,6 +131,7 @@ export class MessageBuffer {
    */
   clearAll(): void {
     this._buffers.clear();
+    this._readCursors.clear();
   }
 
   /**

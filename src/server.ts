@@ -14,6 +14,18 @@ interface ServiceChannelInfo {
   room: string;
   url: string;
   joinedRooms: Set<string>;
+  /** Reconnect token assigned by the service on auth. Used for seamless reconnection. */
+  reconnectToken?: string;
+}
+
+/**
+ * Persistent token store: maps "url|name" → reconnect token.
+ * Allows MCP to automatically reconnect without re-authentication issues.
+ */
+const reconnectTokenStore = new Map<string, string>();
+
+function tokenStoreKey(url: string, name: string): string {
+  return `${url}|${name}`;
 }
 
 /**
@@ -359,6 +371,73 @@ export function createAgentRoomServer(options: AgentRoomServerOptions = {}): Mcp
     },
   );
 
+  // Tool: get_unread_messages
+  mcpServer.tool(
+    "get_unread_messages",
+    "Get unread messages from a stream channel. Returns only messages received since the last time messages were marked as read. Use mark_as_read=true to advance the read cursor after fetching. Useful for checking what's new without re-reading the entire history.",
+    {
+      channel_id: z.string().describe("The channel ID to check for unread messages"),
+      mark_as_read: z.boolean().optional().describe("If true, mark all returned messages as read (advance the cursor). Default: true"),
+      format: z.enum(["text", "json"]).optional().describe("Output format: 'text' (default, human-readable) or 'json' (structured array)"),
+    },
+    async ({ channel_id, mark_as_read, format }) => {
+      try {
+        if (!connectionManager.has(channel_id)) {
+          return {
+            content: [{ type: "text" as const, text: `Channel "${channel_id}" not found. Connect first using connect_stream.` }],
+            isError: true,
+          };
+        }
+
+        const unread = messageBuffer.getUnread(channel_id);
+        const totalBuffered = messageBuffer.getAll(channel_id).length;
+
+        if (unread.length === 0) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: `No unread messages on channel "${channel_id}" (total buffered: ${totalBuffered}).`,
+            }],
+          };
+        }
+
+        // Mark as read by default
+        const shouldMark = mark_as_read !== false;
+        if (shouldMark) {
+          messageBuffer.markAsRead(channel_id);
+        }
+
+        let output: string;
+        if (format === "json") {
+          output = JSON.stringify(
+            unread.map((m) => ({
+              id: m.id,
+              timestamp: m.timestamp,
+              data: m.data,
+            })),
+            null,
+            2,
+          );
+        } else {
+          output = messageBuffer.formatForDisplay(unread);
+        }
+
+        const info = connectionManager.getConnectionInfo(channel_id);
+        const header = `Channel "${channel_id}" — ${unread.length} unread message(s) (total buffered: ${totalBuffered}, connection: ${info?.state ?? "unknown"})${shouldMark ? " [marked as read]" : ""}`;
+
+        return {
+          content: [{ type: "text" as const, text: `${header}\n\n${output}` }],
+        };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          content: [{ type: "text" as const, text: `Error getting unread messages: ${message}` }],
+          isError: true,
+        };
+      }
+    },
+  );
+
   // Tool: wait_for_message
   mcpServer.tool(
     "wait_for_message",
@@ -538,11 +617,20 @@ export function createAgentRoomServer(options: AgentRoomServerOptions = {}): Mcp
             (connectionManager as any).on("message", handler);
           });
 
-        // 2. Send auth (server sends welcome first, we don't need to wait for it)
+        // 2. Send auth — include stored reconnect token if available
+        const storeKey = tokenStoreKey(serviceUrl, userName);
+        const storedToken = reconnectTokenStore.get(storeKey);
+
+        const authPayload: Record<string, unknown> = { action: "auth", name: userName };
+        if (storedToken) {
+          authPayload.token = storedToken;
+          log.info("using stored reconnect token", { userName, url: serviceUrl });
+        }
+
         await connectionManager.send(channelId, JSON.stringify({
           type: "action",
           from: userName,
-          payload: { action: "auth", name: userName },
+          payload: authPayload,
         }));
 
         const authMsg = await waitForResponse("auth");
@@ -554,29 +642,58 @@ export function createAgentRoomServer(options: AgentRoomServerOptions = {}): Mcp
           };
         }
 
-        // 3. Join room
-        await connectionManager.send(channelId, JSON.stringify({
-          type: "action",
-          from: userName,
-          payload: { action: "room.join", room_id: roomId },
-        }));
+        // Store the reconnect token for future use
+        const serverToken = authMsg.payload?.data?.token as string | undefined;
+        if (serverToken) {
+          reconnectTokenStore.set(storeKey, serverToken);
+        }
 
-        const joinMsg = await waitForResponse("room.join");
-        const members = joinMsg.payload?.data?.members as string[] | undefined;
+        const wasReconnected = authMsg.payload?.data?.reconnected === true;
+        const restoredRooms = (authMsg.payload?.data?.restored_rooms ?? []) as string[];
+
+        // 3. Join room (skip if already restored via reconnect)
+        let members: string[] | undefined;
+        if (wasReconnected && restoredRooms.includes(roomId)) {
+          // Room was restored — just fetch members
+          log.info("room already restored via reconnect", { roomId, restoredRooms });
+          // We still need to get member info
+          await connectionManager.send(channelId, JSON.stringify({
+            type: "action",
+            from: userName,
+            payload: { action: "room.members", room_id: roomId },
+          }));
+          const membersMsg = await waitForResponse("room.members");
+          members = membersMsg.payload?.data?.members as string[] | undefined;
+        } else {
+          await connectionManager.send(channelId, JSON.stringify({
+            type: "action",
+            from: userName,
+            payload: { action: "room.join", room_id: roomId },
+          }));
+
+          const joinMsg = await waitForResponse("room.join");
+          members = joinMsg.payload?.data?.members as string[] | undefined;
+        }
 
         // 4. Register as a service channel
+        const allJoinedRooms = new Set([roomId, ...restoredRooms]);
         serviceChannels.set(channelId, {
           name: userName,
           room: roomId,
           url: serviceUrl,
-          joinedRooms: new Set([roomId]),
+          joinedRooms: allJoinedRooms,
+          reconnectToken: serverToken,
         });
 
         const memberList = members && members.length > 0
           ? `\nMembers: ${members.join(", ")}`
           : "";
 
-        done({ channelId });
+        const reconnectNote = wasReconnected
+          ? `\nReconnected: session restored (rooms: ${restoredRooms.join(", ") || "none"})`
+          : "";
+
+        done({ channelId, reconnected: wasReconnected });
 
         return {
           content: [{
@@ -586,12 +703,14 @@ export function createAgentRoomServer(options: AgentRoomServerOptions = {}): Mcp
               ``,
               `Channel ID: ${channelId}`,
               `URL: ${serviceUrl}`,
-              `Room: #${roomId}${memberList}`,
+              `Room: #${roomId}${memberList}${reconnectNote}`,
+              `Token: ${serverToken ? "(stored for reconnection)" : "(none)"}`,
               ``,
               `Usage:`,
               `• send_message("${channelId}", "hello") → sends chat to #${roomId}`,
               `• wait_for_message("${channelId}") → waits for next incoming message`,
               `• read_history("${channelId}") → shows buffered messages`,
+              `• get_unread_messages("${channelId}") → shows only new/unread messages`,
               `• Messages are auto-decoded into human-readable format.`,
             ].join("\n"),
           }],

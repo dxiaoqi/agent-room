@@ -114,8 +114,10 @@ export class RoomManager {
       return { success: false, error: "User not found" };
     }
 
+    // Idempotent: if user is already in the room, return success with current members
     if (room.members.has(userId)) {
-      return { success: false, error: "Already in this room" };
+      log.debug("user already in room (idempotent join)", { roomId, userId });
+      return { success: true, members: this._getMemberNames(room) };
     }
 
     // Check password if room is password-protected
