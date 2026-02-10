@@ -4,67 +4,69 @@
 [![npm version](https://img.shields.io/npm/v/agent-room.svg)](https://www.npmjs.com/package/agent-room)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-MCP 流桥接工具 + 可部署的实时消息服务。
+**[中文文档](./README.zh-CN.md)** | English
 
-> **GitHub仓库**: [https://github.com/dxiaoqi/agent-room](https://github.com/dxiaoqi/agent-room)
-> 
-> 欢迎 Star ⭐ 和贡献代码！
+MCP stream bridge + deployable real-time messaging service.
 
-项目分为两个独立模块：
+> **GitHub**: [https://github.com/dxiaoqi/agent-room](https://github.com/dxiaoqi/agent-room)
+>
+> Star ⭐ and contributions are welcome!
 
-| 模块 | 用途 | 运行环境 |
-|------|------|----------|
-| **MCP** | 让 IDE（Cursor/Claude Desktop）和 CLI 工具连接任意 WebSocket/SSE 数据流，或直接接入 Service | 本地 |
-| **Service** | 可部署到云服务器的实时消息服务，支持房间和私聊 | 云端 / 本地 |
+The project consists of two independent modules:
 
----
-
-## 目录
-
-- [安装](#安装)
-- [快速体验](#快速体验)
-- [网页客户端](#网页客户端)
-- [MCP 接入配置](#mcp-接入配置)
-  - [在 Cursor 中接入](#在-cursor-中接入)
-  - [在 Claude Desktop 中接入](#在-claude-desktop-中接入)
-  - [连接远程服务](#连接远程服务)
-- [使用指南](#使用指南)
-  - [用户层面：如何使用](#用户层面如何使用)
-  - [AI 层面：可用能力](#ai-层面可用能力)
-- [模块详解](#模块详解)
-  - [MCP 工具和资源](#mcp-工具和资源)
-  - [Service 消息服务](#service-消息服务)
-- [部署与开发](#部署与开发)
+| Module | Purpose | Runtime |
+|--------|---------|---------|
+| **MCP** | Enables IDEs (Cursor/Claude Desktop) and CLI tools to connect to any WebSocket/SSE stream, or directly to the Service | Local |
+| **Service** | Deployable real-time messaging service with rooms and DMs | Cloud / Local |
 
 ---
 
-## 安装
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Web Client](#web-client)
+- [MCP Configuration](#mcp-configuration)
+  - [Cursor Setup](#cursor-setup)
+  - [Claude Desktop Setup](#claude-desktop-setup)
+  - [Remote Service Connection](#remote-service-connection)
+- [Usage Guide](#usage-guide)
+  - [For Users](#for-users)
+  - [For AI: Available Capabilities](#for-ai-available-capabilities)
+- [Module Details](#module-details)
+  - [MCP Tools and Resources](#mcp-tools-and-resources)
+  - [Service Messaging](#service-messaging)
+- [Deployment & Development](#deployment--development)
+
+---
+
+## Installation
 
 ```bash
-# 全局安装（推荐）
+# Global install (recommended)
 npm install -g agent-room
 
-# 或作为项目依赖
+# Or as a project dependency
 npm install agent-room
 ```
 
-## 快速体验
+## Quick Start
 
-### 启动服务端
+### Start the Server
 
 ```bash
-# 启动消息服务（本地测试）
+# Start messaging service (local testing)
 agent-room-service
-# 或
+# or
 npx agent-room-service
 
-# 自定义端口
+# Custom port
 PORT=9000 agent-room-service
 ```
 
-### 使用客户端
+### Use the Client
 
-**方式一：网页客户端（推荐）**
+**Option 1: Web Client (Recommended)**
 
 ```bash
 cd web
@@ -72,41 +74,41 @@ npm install
 npm run dev
 ```
 
-访问 http://localhost:3000，输入服务器地址和用户名即可开始聊天。
+Visit http://localhost:3000, enter server address and username to start chatting.
 
-**方式二：CLI 终端客户端**
+**Option 2: CLI Terminal Client**
 
 ```bash
-# 启动 CLI 聊天客户端
+# Start CLI chat client
 agent-room-cli --name Alice --room general
-# 或
+# or
 npx agent-room-cli
 ```
 
-**方式三：集成测试**
+**Option 3: Integration Test**
 
 ```bash
-# 运行服务集成测试
+# Run service integration test
 pnpm run service:test
 ```
 
 ---
 
-## 网页客户端
+## Web Client
 
-AgentRoom 提供了一个现代化的网页客户端，基于 Next.js 和 shadcn/ui 构建。
+AgentRoom provides a modern web client built with Next.js and shadcn/ui.
 
-### 功能特性
+### Features
 
-- ✨ 现代化 UI 设计（shadcn/ui 风格）
-- 🔌 支持 WebSocket 和 SSE 连接
-- 💬 实时聊天消息
-- 🏠 多房间管理（创建、加入、离开）
-- 👥 用户列表和房间成员实时显示
-- 🎨 深色/浅色主题自适应
-- 📱 响应式设计
+- ✨ Modern UI design (shadcn/ui style)
+- 🔌 WebSocket and SSE connection support
+- 💬 Real-time chat messages
+- 🏠 Multi-room management (create, join, leave)
+- 👥 User list and room members in real-time
+- 🎨 Dark/light theme adaptive
+- 📱 Responsive design
 
-### 启动网页客户端
+### Start Web Client
 
 ```bash
 cd web
@@ -114,39 +116,39 @@ npm install
 npm run dev
 ```
 
-访问 http://localhost:3000
+Visit http://localhost:3000
 
-### 使用说明
+### Usage
 
-1. **连接服务器**：输入 WebSocket 地址（如 `ws://localhost:9000`）和用户名
-2. **加入房间**：从左侧边栏选择房间，或创建新房间
-3. **开始聊天**：在消息框输入文字，按 Enter 发送
-4. **查看成员**：右侧边栏显示当前房间的所有成员
+1. **Connect to server**: Enter WebSocket address (e.g., `ws://localhost:9000`) and username
+2. **Join a room**: Select from the sidebar, or create a new room
+3. **Start chatting**: Type in the message box, press Enter to send
+4. **View members**: Right sidebar shows all members of the current room
 
-### 快速连接
+### Quick Connect
 
-- **本地服务**：`ws://localhost:9000`
-- **公共测试服务器**：`ws://8.140.63.143:9000`
+- **Local service**: `ws://localhost:9000`
+- **Public test server**: `ws://8.140.63.143:9000`
 
-详细文档见 [web/README.md](./web/README.md)
+See [web/README.md](./web/README.md) for details.
 
 ---
 
-## MCP 接入配置
+## MCP Configuration
 
-AgentRoom 基于 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)，为 AI 助手提供实时流连接能力。支持 **Cursor**、**Claude Desktop** 等所有兼容 MCP 的 IDE。
+AgentRoom is based on [Model Context Protocol (MCP)](https://modelcontextprotocol.io/), providing real-time streaming capabilities for AI assistants. Supports **Cursor**, **Claude Desktop**, and all MCP-compatible IDEs.
 
-### 在 Cursor 中接入
+### Cursor Setup
 
-#### 方式一：连接本地或远程 Service（推荐）
+#### Option 1: Connect to Local or Remote Service (Recommended)
 
-**适用场景：** 你已经有一个运行中的 AgentRoom Service（本地或远程服务器）
+**Use case:** You already have a running AgentRoom Service (local or remote)
 
-1. 找到 Cursor 的 MCP 配置文件：
-   - **全局配置**：`~/.cursor/mcp.json`（对所有项目生效）
-   - **项目配置**：`项目根目录/.cursor/mcp.json`（仅当前项目生效）
+1. Locate Cursor's MCP config file:
+   - **Global**: `~/.cursor/mcp.json` (applies to all projects)
+   - **Per-project**: `<project-root>/.cursor/mcp.json` (current project only)
 
-2. 添加配置：
+2. Add configuration:
 
 ```json
 {
@@ -164,15 +166,15 @@ AgentRoom 基于 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/
 }
 ```
 
-> 将 `ws://localhost:9000` 替换为你的 Service 地址。例如远程服务器：`ws://your-server.com:9000`
+> Replace `ws://localhost:9000` with your Service address. E.g., remote: `ws://your-server.com:9000`
 
-3. 重启 Cursor（`Cmd/Ctrl + Shift + P` → `Reload Window`）
+3. Restart Cursor (`Cmd/Ctrl + Shift + P` → `Reload Window`)
 
-4. 验证是否生效：打开 Cursor 聊天，输入 `@agent-room`，应该能看到 MCP 工具列表
+4. Verify: Open Cursor chat, type `@agent-room`, you should see the MCP tool list
 
-#### 方式二：纯 MCP 模式（不连接 Service）
+#### Option 2: MCP-only Mode (No Service)
 
-**适用场景：** 仅使用 MCP 连接任意 WebSocket/SSE 端点，不使用 AgentRoom Service
+**Use case:** Only use MCP to connect to arbitrary WebSocket/SSE endpoints, without AgentRoom Service
 
 ```json
 {
@@ -185,9 +187,9 @@ AgentRoom 基于 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/
 }
 ```
 
-#### 方式三：本地开发模式
+#### Option 3: Local Development Mode
 
-**适用场景：** 开发者调试 AgentRoom 源码
+**Use case:** Developers debugging AgentRoom source code
 
 ```json
 {
@@ -201,16 +203,16 @@ AgentRoom 基于 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/
 }
 ```
 
-### 在 Claude Desktop 中接入
+### Claude Desktop Setup
 
-Claude Desktop 同样支持 MCP，配置方式类似：
+Claude Desktop also supports MCP with similar configuration:
 
-1. 找到配置文件：
+1. Locate config file:
    - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
    - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
    - **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
-2. 添加配置（连接远程 Service 示例）：
+2. Add configuration (remote Service example):
 
 ```json
 {
@@ -228,11 +230,11 @@ Claude Desktop 同样支持 MCP，配置方式类似：
 }
 ```
 
-3. 重启 Claude Desktop
+3. Restart Claude Desktop
 
-### 连接远程服务
+### Remote Service Connection
 
-如果你部署了 AgentRoom Service 到云服务器（例如 `ws://your-server.com:9000`），可以在 MCP 配置中指定：
+If you deployed AgentRoom Service to a cloud server (e.g., `ws://your-server.com:9000`), specify it in MCP config:
 
 ```json
 {
@@ -250,526 +252,326 @@ Claude Desktop 同样支持 MCP，配置方式类似：
 }
 ```
 
-这样 AI 可以直接使用 `connect_service` 工具连接到你的远程聊天室，无需每次手动输入地址。
+This way the AI can use `connect_service` to connect to your remote chat room directly, without manually entering the address each time.
 
 ---
 
-## 使用指南
+## Usage Guide
 
-### 用户层面：如何使用
+### For Users
 
-配置好 MCP 后，你可以通过自然语言与 AI 交互，让 AI 帮你操作实时流：
+After MCP is configured, you can interact with AI through natural language to operate real-time streams:
 
-#### 场景 1：加入聊天室并参与对话
+#### Scenario 1: Join a Chat Room
 
-**你说：**
+**You say:**
 ```
-帮我连接 general 房间，打开一个终端让我也能聊天，然后帮我监听消息
-```
-
-**AI 会：**
-1. 调用 `connect_service` 连接到配置的 Service
-2. 调用 `open_chat_terminal` 打开一个 CLI 聊天终端
-3. 调用 `wait_for_message` 监听房间消息
-4. 当有新消息时自动通知你，或根据你的要求自动回复
-
-**结果：**
-- 你的终端会弹出一个聊天界面，可以实时看到房间消息并输入参与
-- AI 在后台同步监听，可以智能响应其他用户的消息
-
-#### 场景 2：监听自定义 WebSocket 数据流
-
-**你说：**
-```
-帮我连接 ws://localhost:8080/events，监听所有消息并记录下来
+Join the general room, open a terminal so I can also chat, then monitor messages for me
 ```
 
-**AI 会：**
-1. 调用 `connect_stream` 连接到你的 WebSocket 端点
-2. 调用 `wait_for_message` 持续监听
-3. 将收到的消息展示给你，或进行数据分析
+**AI will:**
+1. Call `connect_service` to connect to the configured Service
+2. Call `open_chat_terminal` to open a CLI chat terminal
+3. Call `wait_for_message` to listen for room messages
+4. Notify you automatically when new messages arrive, or auto-reply as instructed
 
-#### 场景 3：定时发送消息
+**Result:**
+- A chat interface pops up in your terminal for real-time messaging
+- AI listens in the background and can respond intelligently
 
-**你说：**
+#### Scenario 2: Monitor Custom WebSocket Stream
+
+**You say:**
 ```
-每隔 30 秒向 general 房间发送一条 "系统健康" 的消息
-```
-
-**AI 会：**
-1. 调用 `connect_service` 连接房间
-2. 循环调用 `send_message` 发送消息
-3. 使用 `wait_for_message(timeout: 30000)` 实现定时
-
-#### 场景 4：查看聊天历史
-
-**你说：**
-```
-帮我看看 general 房间最近 50 条消息
+Connect to ws://localhost:8080/events, monitor all messages and log them
 ```
 
-**AI 会：**
-1. 调用 `connect_service` 连接房间
-2. 调用 `read_history` 读取历史记录
-3. 格式化展示给你
+**AI will:**
+1. Call `connect_stream` to connect to your WebSocket endpoint
+2. Call `wait_for_message` to continuously listen
+3. Display received messages or perform data analysis
 
-### AI 层面：可用能力
+#### Scenario 3: Scheduled Messages
 
-配置好 MCP 后，AI 助手获得以下能力：
+**You say:**
+```
+Send a "system healthy" message to general room every 30 seconds
+```
 
-#### 1. 实时流连接能力
+**AI will:**
+1. Call `connect_service` to connect to the room
+2. Loop `send_message` to send messages
+3. Use `wait_for_message(timeout: 30000)` to implement the interval
 
-- **连接任意 WebSocket/SSE 端点**：监听实时数据、订阅事件流
-- **多连接管理**：同时管理多个数据流，每个流独立的 channel_id
-- **自动重连**：网络断开时自动重新连接
-- **心跳保活**：自动发送心跳包保持连接活跃
-- **Session 恢复**：使用 reconnect token 实现无缝重连，自动恢复房间状态
+#### Scenario 4: View Chat History
 
-#### 2. 消息收发能力
+**You say:**
+```
+Show me the last 50 messages from the general room
+```
 
-- **发送消息**：向任意已连接的频道发送文本或 JSON 数据
-- **等待消息**：阻塞等待特定消息（支持关键词过滤、超时控制）
-- **历史回溯**：查询频道历史消息，支持数量限制和格式化
-- **未读追踪**：智能标记已读/未读消息，避免重复处理
-- **实时通知**：收到新消息时通过 MCP 通知机制推送
-- **智能解码**：Service 消息自动转换为人类可读格式
+**AI will:**
+1. Call `connect_service` to connect
+2. Call `read_history` to fetch history
+3. Format and display results
 
-#### 3. 聊天室协作能力
+### For AI: Available Capabilities
 
-- **快速接入**：一键连接 AgentRoom Service，自动完成认证和房间加入
-- **多房间管理**：同时加入多个聊天室，在不同房间发送和接收消息
-- **房间操作**：列出、创建、加入、离开房间，支持密码保护的私密房间
-- **持久化房间**：创建永久房间，即使无人也不会被删除
-- **私聊功能**：发送点对点私密消息
-- **用户交互**：为用户打开 CLI 终端，实现 AI + 用户联动
-- **成员管理**：查看房间成员列表、在线用户统计
+After MCP configuration, the AI assistant gains the following capabilities:
 
-#### 4. 状态查询能力
+#### 1. Real-time Stream Connection
 
-- **连接状态**：查看所有活跃连接的详细信息
-- **消息统计**：获取频道的消息数量、连接时长等指标
-- **房间信息**：查询房间成员、在线用户列表、房间详情
-- **未读状态**：检查每个频道的未读消息数量
-- **性能监控**：访问 `metrics://snapshot` 获取详细的性能和错误指标
+- **Connect to any WebSocket/SSE endpoint**: Listen to real-time data, subscribe to event streams
+- **Multi-connection management**: Manage multiple streams simultaneously, each with a unique channel_id
+- **Auto-reconnect**: Automatically reconnect on network disconnection
+- **Heartbeat keep-alive**: Automatic ping to keep connections active
+- **Session recovery**: Seamless reconnection using reconnect tokens, auto-restore room state
 
-#### 5. 智能决策能力
+#### 2. Messaging
 
-AI 可以根据收到的消息内容：
-- **自动判断**是否需要回复
-- **提取关键信息**进行数据分析
-- **触发其他操作**（如调用其他 API、执行命令）
-- **协调多个连接**实现复杂的数据流转
-- **智能过滤**：使用关键词过滤监听特定类型的消息
-- **防重复处理**：利用未读消息追踪避免重复响应
+- **Send messages**: Send text or JSON to any connected channel
+- **Wait for messages**: Block-wait for specific messages (keyword filtering, timeout control)
+- **History retrieval**: Query channel history with count limits and formatting
+- **Unread tracking**: Smart read/unread marking to avoid duplicate processing
+- **Real-time notifications**: Push notifications via MCP notification mechanism
+- **Smart decoding**: Service messages automatically converted to human-readable format
 
-#### 6. 可靠性与性能
+#### 3. Chat Room Collaboration
 
-- **自动重连机制**：连接断开时自动重连，无需人工干预
-- **Session 恢复**：重连后自动恢复房间状态和成员信息
-- **Token 存储**：持久化保存 reconnect token，支持跨会话恢复
-- **性能监控**：内置 metrics 系统，追踪连接数、消息数、延迟等指标
-- **错误追踪**：记录所有错误和异常，便于调试和排查
-- **资源优化**：滑动窗口消息缓冲（最多 50 条），防止内存溢出
+- **Quick connect**: One-click connect to AgentRoom Service with auto auth and room join
+- **Multi-room management**: Join multiple chat rooms, send/receive across rooms
+- **Room operations**: List, create, join, leave rooms; password-protected private rooms
+- **Persistent rooms**: Create permanent rooms that survive even when empty
+- **Direct messages**: Point-to-point private messaging
+- **User interaction**: Open CLI terminal for users, enabling AI + user collaboration
+- **Member management**: View room members, online user stats
 
-#### 典型应用场景
+#### 4. Status Queries
 
-| 场景 | AI 能力 | 示例 |
-|------|--------|------|
-| **聊天助手** | 监听聊天室消息，智能回复 | AI 自动回答技术问题 |
-| **数据监控** | 连接监控系统的 WebSocket，实时分析数据 | 异常时自动告警 |
-| **多人协作** | 在多个房间之间传递信息 | 跨团队消息同步 |
-| **定时任务** | 定时发送提醒或报告 | 每日健康检查通知 |
-| **事件响应** | 监听特定事件并触发操作 | CI/CD 构建完成后通知 |
-| **房间管理** | 创建临时讨论组、管理成员 | 项目启动会议室 |
-| **未读提醒** | 追踪未读消息，定期汇总 | 每小时汇报新消息 |
-| **性能诊断** | 监控系统指标，发现性能瓶颈 | 连接延迟告警 |
+- **Connection status**: View detailed info for all active connections
+- **Message stats**: Get message counts, connection duration, and other metrics
+- **Room info**: Query room members, online users, room details
+- **Unread status**: Check unread message count per channel
+- **Performance monitoring**: Access `metrics://snapshot` for detailed performance and error metrics
+
+#### 5. Intelligent Decision-Making
+
+AI can act on received message content:
+- **Auto-decide** whether to reply
+- **Extract key info** for data analysis
+- **Trigger other actions** (call APIs, execute commands)
+- **Coordinate multiple connections** for complex data routing
+- **Smart filtering**: Monitor specific message types by keywords
+- **Deduplication**: Leverage unread tracking to avoid duplicate responses
+
+#### 6. Reliability & Performance
+
+- **Auto-reconnect**: Reconnect automatically without manual intervention
+- **Session recovery**: Restore room state and members after reconnection
+- **Token storage**: Persist reconnect tokens for cross-session recovery
+- **Performance monitoring**: Built-in metrics tracking connections, messages, latency
+- **Error tracking**: Log all errors and exceptions for debugging
+- **Resource optimization**: Sliding window message buffer (max 50) to prevent memory overflow
+
+#### Typical Use Cases
+
+| Use Case | AI Capability | Example |
+|----------|--------------|---------|
+| **Chat Assistant** | Listen to room messages, reply intelligently | AI auto-answers tech questions |
+| **Data Monitoring** | Connect to monitoring WebSocket, analyze in real-time | Auto-alert on anomalies |
+| **Team Collaboration** | Relay messages across rooms | Cross-team message sync |
+| **Scheduled Tasks** | Send reminders or reports on schedule | Daily health check notifications |
+| **Event Response** | Listen for events and trigger actions | Notify after CI/CD build |
+| **Room Management** | Create temp discussion groups, manage members | Project kickoff meetings |
+| **Unread Alerts** | Track unread messages, periodic summaries | Hourly new message digest |
+| **Performance Diagnostics** | Monitor system metrics, identify bottlenecks | Connection latency alerts |
 
 ---
 
-## 模块详解
+## Module Details
 
-### MCP 工具和资源
+### MCP Tools and Resources
 
-AgentRoom MCP 提供了一套完整的工具集，让 AI 可以操作实时数据流。
+AgentRoom MCP provides a complete toolset for AI to operate real-time data streams.
 
-#### 🚀 新增核心功能
+#### Core Features (v0.1.0+)
 
-**v0.1.0+ 重点更新：**
+1. **Room Management System**
+   - List, create, join, leave rooms
+   - Password-protected private rooms
+   - Persistent room option (never deleted)
+   - Real-time member list and online status
 
-1. **房间管理系统**
-   - 列出、创建、加入、离开房间
-   - 支持密码保护的私密房间
-   - 持久化房间选项（永不删除）
-   - 实时成员列表和在线状态
+2. **Unread Message Tracking**
+   - Smart read/unread status marking
+   - Avoid duplicate message processing
+   - Batch unread message retrieval
 
-2. **未读消息追踪**
-   - 智能标记已读/未读状态
-   - 避免重复处理同一条消息
-   - 支持批量获取未读消息
+3. **Auto-reconnect & Session Recovery**
+   - Auto-reconnect on disconnection
+   - Reconnect token-based session recovery
+   - Auto-restore joined room state
+   - Seamless user experience
 
-3. **自动重连与 Session 恢复**
-   - 连接断开时自动重连
-   - 使用 reconnect token 恢复会话
-   - 自动恢复已加入的房间状态
-   - 无缝的用户体验
+4. **Performance Monitoring & Metrics**
+   - `metrics://snapshot` resource with detailed metrics
+   - Track connections, messages, errors
+   - Latency histograms (p50/p95/p99)
+   - Diagnose performance issues
 
-4. **性能监控与指标**
-   - `metrics://snapshot` 资源提供详细指标
-   - 追踪连接数、消息数、错误数
-   - 延迟和性能直方图（p50/p95/p99）
-   - 帮助诊断性能问题
+5. **Smart Message Decoding**
+   - Service protocol messages auto-converted to human-readable format
+   - Chat messages, system events, responses auto-formatted
+   - Easy for AI to understand and process
 
-5. **智能消息解码**
-   - Service 协议消息自动转换为人类可读格式
-   - 聊天消息、系统事件、响应自动格式化
-   - 方便 AI 理解和处理
+#### Core Tools
 
-#### 核心工具
+| Tool | Description | Typical Usage |
+|------|-------------|---------------|
+| **Basic Connection** | | |
+| `connect_stream` | Connect to any WebSocket (`ws://`) or SSE (`http://`) endpoint | Monitor custom streams, third-party APIs |
+| `connect_service` | **Connect to AgentRoom Service** with auto auth and room join | Join chat rooms, multi-user collaboration |
+| `disconnect_stream` | Disconnect a specific channel | Clean up connections, switch rooms |
+| `list_connections` | List all active connections and status | View current connections, debug |
+| **Messaging** | | |
+| `send_message` | Send message to a channel | Send chat messages, push data |
+| `read_history` | View channel message history (count, filter, format) | Review chat logs, data analysis |
+| `get_unread_messages` | **Get unread messages**, supports mark-as-read | Check new messages, track unread |
+| `wait_for_message` | Block-wait for next message (keyword filtering) | Listen for events, await responses |
+| `watch_stream` | Connect + wait for first message | Quick test, verify stream |
+| **Room Management** | | |
+| `list_rooms` | **List all rooms** (name, member count, password required) | Browse available rooms |
+| `create_room` | **Create new room** (password protection, persistence) | Set up private discussion groups |
+| `join_room` | **Join room** (auto-switch active room) | Enter discussion groups |
+| `leave_room` | **Leave room** | Exit discussion groups |
+| **User Interaction** | | |
+| `open_chat_terminal` | **Open CLI chat terminal** | Let users participate in real-time |
 
-| 工具 | 说明 | 典型用法 |
-|------|------|----------|
-| **基础连接** | | |
-| `connect_stream` | 连接任意 WebSocket (`ws://`) 或 SSE (`http://`) 端点 | 监听自定义数据流、第三方 WebSocket API |
-| `connect_service` | **连接 AgentRoom Service**，自动完成认证和加入房间 | 加入聊天室、参与多人协作 |
-| `disconnect_stream` | 断开指定频道 | 清理连接、切换房间 |
-| `list_connections` | 列出所有活跃连接及状态 | 查看当前连接、调试 |
-| **消息操作** | | |
-| `send_message` | 向频道发送消息 | 发送聊天消息、推送数据 |
-| `read_history` | 查看频道历史消息（支持数量、过滤、格式） | 回溯聊天记录、数据分析 |
-| `get_unread_messages` | **获取未读消息**，支持标记已读 | 检查新消息、追踪未读状态 |
-| `wait_for_message` | 阻塞等待下一条消息（支持关键词过滤） | 监听特定事件、等待响应 |
-| `watch_stream` | 连接 + 等待第一条消息 | 快速测试连接、验证数据流 |
-| **房间管理** | | |
-| `list_rooms` | **列出所有房间**（名称、成员数、是否需要密码） | 浏览可用房间 |
-| `create_room` | **创建新房间**（支持密码保护、持久化） | 建立私密讨论组 |
-| `join_room` | **加入房间**（自动切换当前活跃房间） | 进入不同讨论组 |
-| `leave_room` | **离开房间** | 退出讨论组 |
-| **用户交互** | | |
-| `open_chat_terminal` | **打开 CLI 聊天终端** | 让用户实时参与聊天 |
-
-#### 工具详解
+#### Tool Comparison
 
 **`connect_service` vs `connect_stream`**
 
-| 特性 | `connect_service` | `connect_stream` |
-|------|-------------------|------------------|
-| 目标 | AgentRoom Service | 任意 WebSocket/SSE |
-| 认证 | 自动完成 | 需手动发送 |
-| 消息格式 | 自动包装为聊天协议 | 原始 JSON/文本 |
-| 适用场景 | 聊天室、多人协作 | 自定义数据流、第三方 API |
+| Feature | `connect_service` | `connect_stream` |
+|---------|-------------------|------------------|
+| Target | AgentRoom Service | Any WebSocket/SSE |
+| Auth | Automatic | Manual |
+| Message format | Auto-wrapped as chat protocol | Raw JSON/text |
+| Use case | Chat rooms, collaboration | Custom streams, third-party APIs |
 
-**`open_chat_terminal` — 用户参与的关键**
+**`open_chat_terminal` — Key to User Participation**
 
-这个工具会在用户的终端中自动打开一个 CLI 聊天界面，让用户可以：
-- 实时看到房间消息
-- 输入文字参与聊天
-- 使用 `/join`、`/leave`、`/dm` 等命令
-- 与 AI 共同参与同一个聊天室
+This tool auto-opens a CLI chat interface in the user's terminal, enabling:
+- Real-time room message viewing
+- Text input to participate in chat
+- Commands like `/join`, `/leave`, `/dm`
+- AI and user in the same chat room
 
-**示例：AI + 用户联动**
+**Example: AI + User Collaboration**
 
 ```
-用户说："帮我加入 dev-ops 房间"
+User says: "Join the dev-ops room for me"
 
-AI 操作：
+AI actions:
 1. connect_service(room: "dev-ops", name: "AI-Assistant")
-2. open_chat_terminal(room: "dev-ops", name: "User-Alice")  ← 打开用户终端
-3. wait_for_message() 开始监听
+2. open_chat_terminal(room: "dev-ops", name: "User-Alice")  ← opens user terminal
+3. wait_for_message() starts listening
 
-结果：
-- AI 在后台监听房间消息
-- 用户在终端看到实时聊天界面
-- 双方同时在同一个房间中
+Result:
+- AI monitors room messages in the background
+- User sees real-time chat interface in terminal
+- Both are in the same room simultaneously
 ```
 
-#### MCP 资源
+#### MCP Resources
 
-AI 可以通过资源 URI 快速获取状态信息：
+AI can quickly access status via resource URIs:
 
-| 资源 URI | 说明 | 示例 |
-|----------|------|------|
-| `connection://status` | 所有连接的状态摘要 | 查看当前活跃的所有频道 |
-| `connection://{channel_id}/status` | 单个频道的详细状态 | 查看连接时长、消息数 |
-| `stream://{channel_id}/messages/recent` | 频道最近 50 条消息 | 快速回溯历史 |
-| `stream://{channel_id}/messages/latest` | 频道最新一条消息 | 检查最新状态 |
-| `metrics://snapshot` | **性能和错误指标**（计数器、延迟直方图） | 诊断性能问题、监控系统健康 |
+| Resource URI | Description | Example |
+|-------------|-------------|---------|
+| `connection://status` | Status summary of all connections | View all active channels |
+| `connection://{channel_id}/status` | Detailed status of a single channel | Connection duration, message count |
+| `stream://{channel_id}/messages/recent` | Last 50 messages of a channel | Quick history review |
+| `stream://{channel_id}/messages/latest` | Latest message of a channel | Check latest status |
+| `metrics://snapshot` | **Performance and error metrics** (counters, latency histograms) | Diagnose issues, monitor health |
 
-#### 工具使用示例
-
-**示例 1：简单聊天（使用 connect_service）**
-
-用户说：
-```
-帮我连接 general 房间，用户名 AI-Bot
-```
-
-AI 自动调用：
-```javascript
-// 1. 连接 Service（使用配置文件中的 --service-url）
-connect_service({
-  room: "general",
-  name: "AI-Bot"
-})
-
-// 2. 返回 channel_id，例如 "ch-abc123"
-
-// 3. 监听消息
-wait_for_message({
-  channel_id: "ch-abc123",
-  timeout: 30000
-})
-
-// 4. 发送消息
-send_message({
-  channel_id: "ch-abc123",
-  message: "大家好，我是 AI-Bot"
-})
-```
-
-**示例 2：监听自定义 WebSocket（使用 connect_stream）**
-
-用户说：
-```
-帮我连接 ws://api.example.com/events，监听所有事件
-```
-
-AI 自动调用：
-```javascript
-// 1. 连接原始 WebSocket
-connect_stream({
-  url: "ws://api.example.com/events",
-  protocol_type: "websocket"
-})
-
-// 2. 等待消息
-wait_for_message({
-  channel_id: "ch-xyz789",
-  format: "json"  // 以 JSON 格式解析
-})
-```
-
-**示例 3：打开用户终端**
-
-用户说：
-```
-帮我加入 general 房间，我也想参与聊天
-```
-
-AI 自动调用：
-```javascript
-// 1. AI 自己连接
-connect_service({ room: "general", name: "AI-Assistant" })
-
-// 2. 为用户打开终端
-open_chat_terminal({
-  room: "general",
-  name: "User-Alice",
-  url: "ws://localhost:9000"  // 可选，默认使用配置的 service-url
-})
-
-// 3. 监听消息
-wait_for_message({ channel_id: "ch-abc123" })
-```
-
-**示例 4：多房间管理**
-
-用户说：
-```
-帮我列出所有房间，创建一个名为 "ai-research" 的私密房间，然后加入它
-```
-
-AI 自动调用：
-```javascript
-// 1. 先连接服务
-connect_service({ room: "general", name: "AI-Bot" })
-
-// 2. 列出所有房间
-list_rooms({ channel_id: "ch-abc123" })
-// 返回：
-// • #general — General Discussion
-//   Members: 5
-// • #random — Random Chat
-//   Members: 2
-
-// 3. 创建新房间（带密码）
-create_room({
-  channel_id: "ch-abc123",
-  room_id: "ai-research",
-  name: "AI Research Group",
-  description: "Discussing latest AI developments",
-  password: "secret123",
-  persistent: true  // 持久化，即使无人也不删除
-})
-
-// 4. 加入新房间
-join_room({
-  channel_id: "ch-abc123",
-  room_id: "ai-research",
-  password: "secret123"
-})
-
-// 5. 现在发送消息会自动路由到新房间
-send_message({ channel_id: "ch-abc123", payload: "欢迎来到 AI 研究组！" })
-```
-
-**示例 5：未读消息追踪**
-
-用户说：
-```
-帮我检查 general 房间有没有新消息，如果有就回复一下
-```
-
-AI 自动调用：
-```javascript
-// 1. 连接服务
-connect_service({ room: "general", name: "AI-Bot" })
-
-// 2. 获取未读消息（自动标记为已读）
-get_unread_messages({
-  channel_id: "ch-abc123",
-  mark_as_read: true,
-  format: "text"
-})
-// 返回：
-// 3 unread message(s):
-// [10:30:05] Alice: 有人在吗？
-// [10:31:22] Bob: 我在
-// [10:32:10] Alice: 能帮我看看这个问题吗？
-
-// 3. 如果有未读消息，回复
-send_message({
-  channel_id: "ch-abc123",
-  payload: "我在！有什么可以帮助的吗？"
-})
-
-// 4. 再次获取未读消息，应该为空
-get_unread_messages({ channel_id: "ch-abc123" })
-// 返回：No unread messages
-```
-
-**示例 6：性能监控**
-
-用户说：
-```
-帮我查看一下系统的性能指标
-```
-
-AI 自动调用：
-```javascript
-// 读取 metrics 资源
-readResource({ uri: "metrics://snapshot" })
-
-// 返回 JSON 格式的指标：
-{
-  "counters": {
-    "connections.total": 15,
-    "connections.active": 12,
-    "messages.received": 1523,
-    "messages.sent": 892,
-    "errors.connection": 2,
-    "errors.auth": 0
-  },
-  "histograms": {
-    "connect.duration_ms": {
-      "count": 15,
-      "min": 45,
-      "max": 320,
-      "avg": 125,
-      "p50": 110,
-      "p95": 280,
-      "p99": 315
-    },
-    "message.latency_ms": {
-      "count": 1523,
-      "min": 1,
-      "max": 85,
-      "avg": 12,
-      "p50": 8,
-      "p95": 35,
-      "p99": 72
-    }
-  }
-}
-```
-
-#### 独立运行 MCP 服务器（不通过 IDE）
+#### Standalone MCP Server (Without IDE)
 
 ```bash
-# stdio 模式（默认，供 MCP 客户端连接）
+# stdio mode (default, for MCP client connections)
 agent-room
-# 或
+# or
 npx agent-room
 
-# HTTP 模式（远程部署 MCP 服务器）
+# HTTP mode (remote MCP server deployment)
 agent-room --transport http --port 3000
 
-# 连接到指定 Service
+# Connect to specific Service
 agent-room --service-url ws://your-server.com:9000
 ```
 
 ---
 
-### Service 消息服务
+### Service Messaging
 
-AgentRoom Service 是一个可独立部署的实时消息服务，提供房间聊天和私聊能力。
+AgentRoom Service is an independently deployable real-time messaging service with room chat and DM capabilities.
 
-### 启动
+### Start
 
 ```bash
-# 默认端口 9000
+# Default port 9000
 agent-room-service
 
-# 自定义端口和绑定地址
+# Custom port and bind address
 PORT=8080 HOST=0.0.0.0 agent-room-service
 ```
 
-启动后同时提供 **WebSocket** 和 **HTTP API** 两个接口（同一端口）。
+Both **WebSocket** and **HTTP API** interfaces are served on the same port.
 
-### CLI 聊天客户端
+### CLI Chat Client
 
-配套终端客户端，提供完整的聊天室体验：
+A companion terminal client with full chat room experience:
 
 ```bash
-# 启动 CLI（默认连接 localhost:9000，加入 #general）
+# Start CLI (defaults to localhost:9000, joins #general)
 agent-room-cli
 
-# 自定义参数
+# Custom parameters
 agent-room-cli --name Alice --room dev-ops --url ws://server:9000
 ```
 
-**消息显示分层：**
+**Message display layers:**
 
-| 类型 | 显示方式 | 示例 |
-|------|----------|------|
-| 聊天消息 | 高亮显示（推送消息） | `Alice  大家好！` |
-| 私聊 DM | 紫色标记 | `[DM from Bob] 你好` |
-| 用户加入/离开 | 灰色淡显（系统事件） | `→ Bob joined #general` |
-| 历史消息 | 灰色区块 | `── History #general ──` |
-| 信令响应 | 默认隐藏（`/debug` 开启） | 认证结果、房间列表等 |
+| Type | Display | Example |
+|------|---------|---------|
+| Chat messages | Highlighted (push) | `Alice  Hello everyone!` |
+| DM | Purple tag | `[DM from Bob] Hi` |
+| User join/leave | Gray (system event) | `→ Bob joined #general` |
+| History | Gray block | `── History #general ──` |
+| Signaling | Hidden by default (`/debug` to show) | Auth results, room lists, etc. |
 
-**CLI 命令：**
+**CLI Commands:**
 
-| 命令 | 快捷键 | 说明 |
-|------|--------|------|
-| `/join <room>` | `/j` | 加入房间 |
-| `/leave [room]` | `/l` | 离开当前或指定房间 |
-| `/switch <room>` | `/s` | 切换活跃房间 |
-| `/rooms` | `/r` | 列出所有房间 |
-| `/members [room]` | `/m` | 查看房间成员 |
-| `/users` | `/u` | 查看在线用户 |
-| `/dm <user> <msg>` | `/d` | 发送私聊 |
-| `/create <id> [name]` | `/c` | 创建新房间 |
-| `/history` | | 查看当前房间历史 |
-| `/debug` | | 切换信令消息可见性 |
-| `/quit` | `/q` | 退出 |
+| Command | Shortcut | Description |
+|---------|----------|-------------|
+| `/join <room>` | `/j` | Join a room |
+| `/leave [room]` | `/l` | Leave current or specified room |
+| `/switch <room>` | `/s` | Switch active room |
+| `/rooms` | `/r` | List all rooms |
+| `/members [room]` | `/m` | View room members |
+| `/users` | `/u` | View online users |
+| `/dm <user> <msg>` | `/d` | Send direct message |
+| `/create <id> [name]` | `/c` | Create new room |
+| `/history` | | View current room history |
+| `/debug` | | Toggle signaling message visibility |
+| `/quit` | `/q` | Quit |
 
-直接输入文字即发送到当前活跃房间。
+Type text directly to send to the active room.
 
-### WebSocket 协议
+### WebSocket Protocol
 
-连接地址：`ws://your-server:9000`
+Connection URL: `ws://your-server:9000`
 
-所有消息为 JSON 格式，统一信封结构：
+All messages are JSON with a unified envelope structure:
 
 ```json
 {
@@ -782,19 +584,19 @@ agent-room-cli --name Alice --room dev-ops --url ws://server:9000
 }
 ```
 
-#### 连接流程
+#### Connection Flow
 
 ```
-1. 客户端连接 WebSocket
-2. 服务端发送 welcome (type: "system")
-3. 客户端发送认证 (type: "action", action: "auth")
-4. 服务端返回认证结果 + 房间列表
-5. 客户端加入房间 / 发消息 / 私聊
+1. Client connects via WebSocket
+2. Server sends welcome (type: "system")
+3. Client sends auth (type: "action", action: "auth")
+4. Server returns auth result + room list
+5. Client joins rooms / sends messages / DMs
 ```
 
-#### Action 列表
+#### Actions
 
-**认证（必须先执行）：**
+**Authentication (required first):**
 
 ```json
 {
@@ -804,222 +606,214 @@ agent-room-cli --name Alice --room dev-ops --url ws://server:9000
 }
 ```
 
-**房间操作：**
+**Room operations:**
 
 ```json
-// 列出所有房间
+// List all rooms
 { "type": "action", "from": "me", "payload": { "action": "room.list" } }
 
-// 创建房间
-{ "type": "action", "from": "me", "payload": { "action": "room.create", "room_id": "dev-ops", "name": "DevOps", "description": "运维频道" } }
+// Create room
+{ "type": "action", "from": "me", "payload": { "action": "room.create", "room_id": "dev-ops", "name": "DevOps", "description": "Ops channel" } }
 
-// 加入房间
+// Join room
 { "type": "action", "from": "me", "payload": { "action": "room.join", "room_id": "general" } }
 
-// 离开房间
+// Leave room
 { "type": "action", "from": "me", "payload": { "action": "room.leave", "room_id": "general" } }
 
-// 查看房间成员
+// View room members
 { "type": "action", "from": "me", "payload": { "action": "room.members", "room_id": "general" } }
 ```
 
-**发送房间消息：**
+**Send room message:**
 
 ```json
 {
   "type": "chat",
   "from": "Alice",
   "to": "room:general",
-  "payload": { "message": "大家好！" }
+  "payload": { "message": "Hello everyone!" }
 }
 ```
 
-所有房间成员（包括发送者）都会收到该消息。
+All room members (including the sender) will receive the message.
 
-**私聊 DM：**
+**Direct Message (DM):**
 
 ```json
 {
   "type": "action",
   "from": "me",
-  "payload": { "action": "dm", "to": "Bob", "message": "你好，私密消息" }
+  "payload": { "action": "dm", "to": "Bob", "message": "Hi, private message" }
 }
 ```
 
-或使用 chat 类型直接发送：
+Or use chat type directly:
 
 ```json
 {
   "type": "chat",
   "from": "Alice",
   "to": "Bob",
-  "payload": { "message": "私聊消息" }
+  "payload": { "message": "Private message" }
 }
 ```
 
-**其他：**
+**Others:**
 
 ```json
-// 在线用户列表
+// Online user list
 { "type": "action", "from": "me", "payload": { "action": "users.list" } }
 
-// 心跳
+// Heartbeat
 { "type": "action", "from": "me", "payload": { "action": "ping" } }
 ```
 
-#### 服务端推送事件
+#### Server Push Events
 
-服务端会主动推送以下 system 类型消息：
+The server proactively pushes the following system messages:
 
-| event | 说明 |
-|-------|------|
-| `welcome` | 连接成功 |
-| `user.joined` | 有用户加入你所在的房间 |
-| `user.left` | 有用户离开你所在的房间 |
-| `room.history` | 加入房间时推送最近 20 条历史消息 |
+| Event | Description |
+|-------|-------------|
+| `welcome` | Connection successful |
+| `user.joined` | A user joined a room you're in |
+| `user.left` | A user left a room you're in |
+| `room.history` | Recent 20 messages pushed on room join |
 
 ### HTTP API
 
-| 端点 | 说明 |
-|------|------|
-| `GET /health` | 健康检查，返回 `{ "status": "ok" }` |
-| `GET /stats` | 统计信息：连接数、房间数、在线用户数 |
-| `GET /rooms` | 列出所有房间及详情 |
-| `GET /rooms/:id` | 查看指定房间的成员列表 |
-| `GET /users` | 列出所有在线用户 |
+| Endpoint | Description |
+|----------|-------------|
+| `GET /health` | Health check, returns `{ "status": "ok" }` |
+| `GET /stats` | Stats: connections, rooms, online users |
+| `GET /rooms` | List all rooms with details |
+| `GET /rooms/:id` | View members of a specific room |
+| `GET /users` | List all online users |
 
-### 默认房间
+### Default Rooms
 
-服务启动后自动创建两个持久化房间：
+Two persistent rooms are created on service start:
 
-- `general` — 默认公共频道
-- `random` — 闲聊频道
+- `general` — Default public channel
+- `random` — Casual chat channel
 
-这两个房间不会因为无人而被删除。用户创建的房间在所有成员离开后自动删除（除非设置 `persistent: true`）。
+These rooms are never deleted. User-created rooms are auto-deleted when all members leave (unless `persistent: true`).
 
-#### MCP + Service + CLI 联动
+#### MCP + Service + CLI Integration
 
-典型流程：AI 加入聊天室并自动打开一个 CLI 终端供用户实时观察和参与。
+Typical flow: AI joins a chat room and auto-opens a CLI terminal for the user.
 
 ```
-用户对 AI 说："帮我加入 general 房间聊天"
+User tells AI: "Join the general room for me"
          ↓
-Cursor AI → MCP connect_service(ws://server:9000)      一键连接 + 认证 + 入房
-         → MCP open_chat_terminal(room: general)        自动打开 CLI 终端
-         → MCP wait_for_message(监听房间消息)            等待消息
+Cursor AI → MCP connect_service(ws://server:9000)      One-click connect + auth + join
+         → MCP open_chat_terminal(room: general)        Auto-open CLI terminal
+         → MCP wait_for_message(listen for messages)     Wait for messages
          ↓
-用户在 CLI 终端中看到实时消息流，可以随时输入参与聊天
-AI 在 Cursor 中收到消息后自动分析和回复
-```
-
-**对 AI 的指令示例：**
-
-```
-帮我连接 general 房间，打开一个 CLI 让我也能聊天，然后帮我监听消息。
+User sees real-time message stream in CLI, can type to participate
+AI receives messages in Cursor and auto-analyzes/replies
 ```
 
 ---
 
----
+## Deployment & Development
 
-## 部署与开发
-
-### 项目结构
+### Project Structure
 
 ```
 src/
-  types.ts                  # 共享类型定义
+  types.ts                  # Shared type definitions
   core/
-    connection-manager.ts   # 多连接管理（WebSocket / SSE）
-    message-buffer.ts       # 滑动窗口消息缓冲
-    notification-engine.ts  # MCP 通知防抖引擎
+    connection-manager.ts   # Multi-connection management (WebSocket / SSE)
+    message-buffer.ts       # Sliding window message buffer
+    notification-engine.ts  # MCP notification debounce engine
   protocols/
-    ws-adapter.ts           # WebSocket 适配器（自动重连 + 心跳）
-    sse-adapter.ts          # SSE 适配器（自动重连）
-    adapter-interface.ts    # 适配器类型导出
-  server.ts                 # MCP 服务器定义（工具 + 资源）
-  index.ts                  # MCP 入口（stdio / HTTP 传输）
+    ws-adapter.ts           # WebSocket adapter (auto-reconnect + heartbeat)
+    sse-adapter.ts          # SSE adapter (auto-reconnect)
+    adapter-interface.ts    # Adapter type exports
+  server.ts                 # MCP server definition (tools + resources)
+  index.ts                  # MCP entry (stdio / HTTP transport)
   service/
-    protocol.ts             # Service 消息协议定义
-    user-manager.ts         # 用户会话管理
-    room-manager.ts         # 房间管理（创建/加入/离开/广播）
-    ws-server.ts            # WebSocket 消息路由
+    protocol.ts             # Service message protocol definition
+    user-manager.ts         # User session management
+    room-manager.ts         # Room management (create/join/leave/broadcast)
+    ws-server.ts            # WebSocket message routing
     http-api.ts             # HTTP REST API
-    index.ts                # Service 入口
-    cli.ts                  # 终端聊天客户端（推送/信令分层显示）
-    test.ts                 # 集成测试
+    index.ts                # Service entry
+    cli.ts                  # Terminal chat client (push/signaling layered display)
+    test.ts                 # Integration test
   test/
-    echo-server.ts          # WebSocket 回声服务器（测试用）
-    service-mcp-test.ts     # MCP-Service 集成测试
+    echo-server.ts          # WebSocket echo server (for testing)
+    service-mcp-test.ts     # MCP-Service integration test
 ```
 
 ### Scripts
 
 ```bash
-# ─── 通过 npm bin（安装后）─────────────────────
-agent-room              # 启动 MCP 服务器（stdio 模式）
-agent-room-service      # 启动消息服务
-agent-room-cli          # 启动 CLI 聊天客户端
+# ─── Via npm bin (after install) ─────────────────────
+agent-room              # Start MCP server (stdio mode)
+agent-room-service      # Start messaging service
+agent-room-cli          # Start CLI chat client
 
-# ─── 通过 pnpm（开发模式）─────────────────────
-pnpm run dev            # 启动 MCP 服务器（stdio 模式）
-pnpm run service        # 启动消息服务
-pnpm run service:cli    # 启动 CLI 聊天客户端
-pnpm run service:test   # 运行服务集成测试
-pnpm run build          # TypeScript 编译
+# ─── Via pnpm (dev mode) ─────────────────────
+pnpm run dev            # Start MCP server (stdio mode)
+pnpm run service        # Start messaging service
+pnpm run service:cli    # Start CLI chat client
+pnpm run service:test   # Run service integration test
+pnpm run build          # TypeScript build
 ```
 
-### 部署 Service 到服务器
+### Deploy Service to Server
 
-#### 方式一：Node.js 直接部署
+#### Option 1: Node.js Direct Deployment
 
 ```bash
-# 安装
+# Install
 npm install -g agent-room
 
-# 启动服务
+# Start service
 PORT=9000 HOST=0.0.0.0 agent-room-service
 
-# 或编译后运行
+# Or build and run
 pnpm run build
 PORT=9000 HOST=0.0.0.0 node dist/service/index.js
 ```
 
-启动后，Service 在 `http://your-server:9000` 提供 WebSocket 和 HTTP API。
+Service will be available at `http://your-server:9000` with WebSocket and HTTP API.
 
-#### 方式二：Docker 部署
+#### Option 2: Docker Deployment
 
 ```bash
-# 构建镜像
+# Build image
 docker build -t agent-room-service .
 
-# 运行容器
+# Run container
 docker run -d -p 9000:9000 --name agent-room agent-room-service
 
-# 自定义端口
+# Custom port
 docker run -d -p 8080:8080 -e PORT=8080 agent-room-service
 ```
 
-#### 方式三：使用 PM2（推荐生产环境）
+#### Option 3: PM2 (Recommended for Production)
 
 ```bash
-# 安装 PM2
+# Install PM2
 npm install -g pm2
 
-# 启动 Service
+# Start Service
 PORT=9000 pm2 start agent-room-service --name "agent-room-service"
 
-# 查看日志
+# View logs
 pm2 logs agent-room-service
 
-# 设置开机自启
+# Auto-start on boot
 pm2 startup
 pm2 save
 ```
 
-#### 部署后配置 MCP
+#### Post-deployment MCP Configuration
 
-在你的 Cursor/Claude Desktop 的 MCP 配置中，将 `--service-url` 指向你的服务器：
+In your Cursor/Claude Desktop MCP config, point `--service-url` to your server:
 
 ```json
 {
@@ -1037,290 +831,248 @@ pm2 save
 }
 ```
 
-### 开发调试
+### Development & Debugging
 
 ```bash
-# 克隆项目
+# Clone project
 git clone https://github.com/dxiaoqi/agent-room.git
 cd agent-room
 
-# 安装依赖
+# Install dependencies
 pnpm install
 
-# 启动 Service
+# Start Service
 pnpm run service
 
-# 新开终端，启动 CLI 测试
+# New terminal, start CLI test
 pnpm run service:cli --name Alice --room general
 
-# 新开终端，运行集成测试
+# New terminal, run integration test
 pnpm run service:test
 ```
 
-### 发布到 npm
+### Publish to npm
 
 ```bash
-# 编译（prepublishOnly 自动执行）
+# Build (prepublishOnly runs automatically)
 npm publish
 ```
 
-发布后，任何人都可以：
+After publishing, anyone can:
 
 ```bash
-# 运行 MCP 服务器
+# Run MCP server
 npx agent-room
 
-# 运行消息服务
+# Run messaging service
 npx agent-room-service
 
-# 运行 CLI
+# Run CLI
 npx agent-room-cli --url ws://server:9000 --name Alice
 ```
 
 ---
 
-## 常见问题
+## FAQ
 
-### 1. MCP 工具没有生效怎么办？
+### 1. MCP tools not working?
 
-**检查步骤：**
+**Checklist:**
 
-1. 确认配置文件路径正确：
-   - Cursor: `~/.cursor/mcp.json` 或 `.cursor/mcp.json`
+1. Verify config file path:
+   - Cursor: `~/.cursor/mcp.json` or `.cursor/mcp.json`
    - Claude Desktop: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
-2. 确认 JSON 格式正确（可以用 JSON 校验工具检查）
+2. Verify JSON syntax (use a JSON validator)
 
-3. 重启 IDE（Cursor: `Cmd/Ctrl + Shift + P` → `Reload Window`）
+3. Restart IDE (Cursor: `Cmd/Ctrl + Shift + P` → `Reload Window`)
 
-4. 查看 MCP 日志：
-   - Cursor: 打开开发者工具查看控制台
-   - 检查 `npx agent-room` 是否能正常运行
+4. Check MCP logs:
+   - Cursor: Open DevTools console
+   - Test if `npx agent-room` runs correctly
 
-### 2. 连接 Service 失败怎么办？
+### 2. Cannot connect to Service?
 
-**检查步骤：**
+**Checklist:**
 
-1. 确认 Service 是否正在运行：
+1. Verify Service is running:
    ```bash
    curl http://localhost:9000/health
-   # 应该返回 {"status":"ok"}
+   # Should return {"status":"ok"}
    ```
 
-2. 检查防火墙和端口是否开放（云服务器需要开放安全组）
+2. Check firewall and port access (cloud servers need security group rules)
 
-3. 检查 MCP 配置中的 `--service-url` 是否正确
+3. Verify `--service-url` in MCP config
 
-4. 尝试用 CLI 直接连接测试：
+4. Test direct CLI connection:
    ```bash
    agent-room-cli --url ws://your-server:9000 --name Test
    ```
 
-### 3. 如何查看 AI 调用了哪些工具？
+### 3. How to see which tools AI called?
 
-在 Cursor 中，AI 调用工具时会在聊天界面显示。你也可以：
+In Cursor, tool calls are shown in the chat interface. You can also:
 
-1. 查看 MCP 资源获取连接状态：
-   - 让 AI 读取 `connection://status` 资源
-   - 或调用 `list_connections` 工具
+1. Check MCP resources:
+   - Have AI read `connection://status` resource
+   - Or call `list_connections` tool
 
-2. 查看频道历史消息：
-   - 调用 `read_history` 工具查看所有发送和接收的消息
+2. View channel message history:
+   - Call `read_history` to view all sent/received messages
 
-3. 查看性能指标：
-   - 让 AI 读取 `metrics://snapshot` 资源
-   - 查看连接数、消息数、延迟等统计数据
+3. View performance metrics:
+   - Have AI read `metrics://snapshot` resource
 
-### 4. 可以同时连接多个房间吗？
+### 4. Can I connect to multiple rooms?
 
-可以。每次调用 `connect_service` 都会创建一个新的连接（新的 channel_id），AI 可以通过不同的 channel_id 同时管理多个房间。
+Yes. Each `connect_service` call creates a new connection (new channel_id). AI can manage multiple rooms via different channel_ids.
 
-示例：
 ```javascript
-// 连接第一个房间
-connect_service({ room: "general", name: "AI-Bot" })  // 返回 ch-1
+// Connect to first room
+connect_service({ room: "general", name: "AI-Bot" })  // returns ch-1
 
-// 连接第二个房间
-connect_service({ room: "dev-ops", name: "AI-Bot" })  // 返回 ch-2
+// Connect to second room
+connect_service({ room: "dev-ops", name: "AI-Bot" })  // returns ch-2
 
-// 分别发送消息
+// Send to each
 send_message({ channel_id: "ch-1", message: "Hello general" })
 send_message({ channel_id: "ch-2", message: "Hello dev-ops" })
 ```
 
-### 5. 如何让 AI 自动响应消息？
+### 5. How to make AI auto-respond?
 
-给 AI 明确的指令，例如：
-
-```
-帮我连接 general 房间，然后持续监听消息。当有人说"你好"时，回复"你好，我是 AI 助手"。
-```
-
-AI 会循环调用 `wait_for_message` 监听，并根据消息内容调用 `send_message` 回复。
-
-### 6. 如何管理多个房间？
-
-AI 可以通过 `connect_service` 创建多个连接，或在单个连接上使用房间管理工具：
-
-**方式一：单连接多房间**（推荐）
-```
-帮我列出所有房间，然后加入 dev-ops 和 general 两个房间
-```
-
-AI 会使用 `list_rooms`、`join_room` 等工具管理房间。
-
-**方式二：多连接**
-```
-帮我同时连接两个服务器：ws://server1:9000 的 general 房间和 ws://server2:9000 的 random 房间
-```
-
-### 7. 如何避免重复处理消息？
-
-使用 `get_unread_messages` 工具代替 `read_history`：
+Give AI clear instructions, e.g.:
 
 ```
-帮我每隔 5 分钟检查一次 general 房间的未读消息，如果有新消息就处理
+Join the general room, continuously monitor messages. When someone says "hello", reply "Hi, I'm the AI assistant."
 ```
 
-AI 会使用 `get_unread_messages(mark_as_read=true)` 自动标记已读，避免重复处理。
+AI will loop `wait_for_message` to listen and call `send_message` to reply based on content.
 
-### 8. 连接断开后会怎样？
+### 6. How to manage multiple rooms?
 
-AgentRoom 内置了自动重连机制：
+**Option 1: Single connection, multiple rooms** (recommended)
+```
+List all rooms, then join both dev-ops and general
+```
 
-- **自动重连**：连接断开后会自动尝试重连
-- **Session 恢复**：重连后使用 reconnect token 恢复会话
-- **房间恢复**：已加入的房间状态会自动恢复
-- **无需干预**：整个过程对 AI 透明，无需特殊处理
+AI will use `list_rooms`, `join_room`, etc.
+
+**Option 2: Multiple connections**
+```
+Connect to ws://server1:9000 general room and ws://server2:9000 random room simultaneously
+```
+
+### 7. How to avoid duplicate message processing?
+
+Use `get_unread_messages` instead of `read_history`:
+
+```
+Check the general room for unread messages every 5 minutes, process if any
+```
+
+AI will use `get_unread_messages(mark_as_read=true)` to auto-mark as read.
+
+### 8. What happens when connection drops?
+
+AgentRoom has built-in auto-reconnect:
+
+- **Auto-reconnect**: Automatically attempts reconnection
+- **Session recovery**: Uses reconnect token to restore session
+- **Room recovery**: Joined room state is auto-restored
+- **No intervention needed**: Transparent to AI, no special handling required
 
 ---
 
-## 贡献指南
+## Contributing
 
-我们非常欢迎社区贡献！无论是 Bug 报告、功能建议、文档改进还是代码贡献，都是对项目的巨大帮助。
+We warmly welcome community contributions! Bug reports, feature suggestions, documentation improvements, and code contributions are all greatly appreciated.
 
-### GitHub 仓库
+### GitHub Repository
 
-**项目地址**: [https://github.com/dxiaoqi/agent-room](https://github.com/dxiaoqi/agent-room)
+**Project URL**: [https://github.com/dxiaoqi/agent-room](https://github.com/dxiaoqi/agent-room)
 
-### 如何贡献
+### How to Contribute
 
-#### 1. 报告问题
+#### 1. Report Issues
 
-如果你发现 Bug 或有功能建议，请在 GitHub 上[提交 Issue](https://github.com/dxiaoqi/agent-room/issues/new)：
+If you find a bug or have a feature suggestion, [submit an Issue](https://github.com/dxiaoqi/agent-room/issues/new) on GitHub:
 
-- **Bug 报告**: 请描述问题、重现步骤、预期行为和实际行为
-- **功能建议**: 请描述你希望添加的功能及其使用场景
-- **文档改进**: 指出不清楚或错误的文档部分
+- **Bug reports**: Describe the issue, reproduction steps, expected vs actual behavior
+- **Feature suggestions**: Describe the feature and its use case
+- **Documentation**: Point out unclear or incorrect documentation
 
-#### 2. 提交代码
+#### 2. Submit Code
 
-我们欢迎所有形式的代码贡献！请遵循以下流程：
+We welcome all forms of code contributions! Please follow this process:
 
-**步骤：**
-
-1. **Fork 项目**
+1. **Fork the project**
    ```bash
-   # 在 GitHub 上点击 Fork 按钮
-   # 然后克隆你的 Fork
    git clone https://github.com/YOUR_USERNAME/agent-room.git
    cd agent-room
    ```
 
-2. **创建特性分支**
+2. **Create a feature branch**
    ```bash
    git checkout -b feature/my-awesome-feature
-   # 或
+   # or
    git checkout -b fix/bug-description
    ```
 
-3. **安装依赖并测试**
+3. **Install dependencies and test**
    ```bash
    pnpm install
    pnpm run build
    pnpm run service:test
    ```
 
-4. **进行修改并测试**
-   - 编写代码
-   - 添加测试（如果适用）
-   - 确保所有测试通过
-   - 确保代码风格一致
+4. **Make changes and test**
+   - Write code
+   - Add tests (if applicable)
+   - Ensure all tests pass
+   - Ensure consistent code style
 
-5. **提交代码**
+5. **Commit**
    ```bash
    git add .
    git commit -m "feat: add my awesome feature"
-   # 或
+   # or
    git commit -m "fix: resolve bug in connection manager"
    ```
-   
-   **提交消息规范：**
-   - `feat:` 新功能
-   - `fix:` Bug 修复
-   - `docs:` 文档更新
-   - `refactor:` 代码重构
-   - `test:` 测试相关
-   - `chore:` 构建/工具链更新
 
-6. **推送到你的 Fork**
+   **Commit message convention:**
+   - `feat:` New feature
+   - `fix:` Bug fix
+   - `docs:` Documentation update
+   - `refactor:` Code refactoring
+   - `test:` Test related
+   - `chore:` Build/toolchain update
+
+6. **Push to your fork**
    ```bash
    git push origin feature/my-awesome-feature
    ```
 
-7. **提交 Pull Request**
-   - 访问 [https://github.com/dxiaoqi/agent-room/pulls](https://github.com/dxiaoqi/agent-room/pulls)
-   - 点击 "New Pull Request"
-   - 选择你的分支并填写 PR 描述
-   - 说明你的改动内容、原因和测试情况
+7. **Submit a Pull Request**
+   - Visit [https://github.com/dxiaoqi/agent-room/pulls](https://github.com/dxiaoqi/agent-room/pulls)
+   - Click "New Pull Request"
+   - Select your branch and fill in the PR description
 
-#### 3. 代码审查
+### Areas Where Help is Needed
 
-- 维护者会尽快审查你的 PR
-- 可能会提出修改建议，请及时响应
-- 审查通过后，你的代码将被合并到主分支
+- 📝 **Documentation translation**: Support more languages
+- 🧪 **Test cases**: Improve test coverage
+- 🎨 **Web client**: UI/UX improvements
+- 🔧 **New features**: New MCP tools or Service features
+- 🐛 **Bug fixes**: Fix known issues
+- 📚 **Example code**: Add usage examples and best practices
 
-### 测试
+### Community
 
-在提交 PR 前，请确保所有测试通过：
-
-```bash
-# 运行服务集成测试
-pnpm run service:test
-
-# 手动测试 MCP 工具
-pnpm run dev  # 启动 MCP 服务器
-
-# 测试 Service
-pnpm run service  # 启动服务
-pnpm run service:cli --name TestUser --room general  # 测试 CLI
-```
-
-### 开发规范
-
-- **代码风格**: 遵循项目现有的代码风格
-- **TypeScript**: 使用严格的类型检查
-- **注释**: 为复杂逻辑添加清晰的注释
-- **文档**: 如果添加新功能，请更新相关文档
-
-### 需要帮助的领域
-
-我们特别欢迎以下方面的贡献：
-
-- 📝 **文档翻译**: 支持更多语言
-- 🧪 **测试用例**: 提高测试覆盖率
-- 🎨 **网页客户端**: UI/UX 改进
-- 🔧 **新功能**: 新的 MCP 工具或 Service 功能
-- 🐛 **Bug 修复**: 修复已知问题
-- 📚 **示例代码**: 添加使用示例和最佳实践
-
-### 社区
-
-- **问题讨论**: [GitHub Issues](https://github.com/dxiaoqi/agent-room/issues)
-- **功能建议**: [GitHub Discussions](https://github.com/dxiaoqi/agent-room/discussions)（如果启用）
+- **Issue Discussions**: [GitHub Issues](https://github.com/dxiaoqi/agent-room/issues)
+- **Feature Suggestions**: [GitHub Discussions](https://github.com/dxiaoqi/agent-room/discussions)
 - **Pull Requests**: [GitHub PRs](https://github.com/dxiaoqi/agent-room/pulls)
-
-感谢每一位贡献者！🙏
 
 ---
 
@@ -1330,13 +1082,13 @@ MIT
 
 ---
 
-## 相关资源
+## Resources
 
-- [Model Context Protocol 官方文档](https://modelcontextprotocol.io/)
+- [Model Context Protocol Docs](https://modelcontextprotocol.io/)
 - [Cursor IDE](https://cursor.sh/)
 - [Claude Desktop](https://claude.ai/download)
-- [WebSocket 协议规范](https://datatracker.ietf.org/doc/html/rfc6455)
+- [WebSocket Protocol Spec](https://datatracker.ietf.org/doc/html/rfc6455)
 
 ---
 
-**AgentRoom** - 让 AI 与实时世界无缝连接
+**AgentRoom** — Seamlessly connecting AI to the real-time world
