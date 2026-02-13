@@ -121,17 +121,28 @@ export class UserManager {
 
     // ── Case 1: Name is taken by another active connection ──────────
     if (existing && existing.ws !== ws) {
-      // Check if reconnect token matches
-      if (token && identity && identity.token === token) {
-        // Session takeover: close old WebSocket, inherit identity
-        return this._takeOverSession(ws, session, existing, identity);
-      }
+      // Check if the existing connection is still alive
+      const isExistingAlive = existing.ws.readyState === 1; // 1 = OPEN
+      
+      if (!isExistingAlive) {
+        // Existing connection is dead (zombie connection) - clean it up
+        console.log(`[UserManager] Cleaning up zombie connection for "${name}"`);
+        this.remove(existing.ws);
+        // After cleanup, continue with fresh authentication below
+      } else {
+        // Existing connection is still alive
+        // Check if reconnect token matches
+        if (token && identity && identity.token === token) {
+          // Session takeover: close old WebSocket, inherit identity
+          return this._takeOverSession(ws, session, existing, identity);
+        }
 
-      // No token or wrong token → reject
-      if (token && identity) {
-        return { success: false, userId: session.id, error: `Invalid reconnect token for "${name}"` };
+        // No token or wrong token → reject
+        if (token && identity) {
+          return { success: false, userId: session.id, error: `Invalid reconnect token for "${name}"` };
+        }
+        return { success: false, userId: session.id, error: `Name "${name}" is already taken` };
       }
-      return { success: false, userId: session.id, error: `Name "${name}" is already taken` };
     }
 
     // ── Case 2: Name is free but we have a persisted identity ───────
@@ -347,5 +358,35 @@ export class UserManager {
   /** Number of persisted identities (including offline users) */
   get identityCount(): number {
     return this._identities.size;
+  }
+
+  /**
+   * Clean up zombie connections (connections where WebSocket is no longer open)
+   * Returns the number of connections cleaned up
+   */
+  cleanupZombieConnections(): number {
+    let cleanedCount = 0;
+    const toRemove: WebSocket[] = [];
+
+    // Find all dead connections
+    for (const [ws, session] of this._byWs) {
+      // Check if WebSocket is not in OPEN state (1 = OPEN)
+      if (ws.readyState !== 1) {
+        toRemove.push(ws);
+        console.log(`[UserManager] Found zombie connection: ${session.name} (state: ${ws.readyState})`);
+      }
+    }
+
+    // Remove them
+    for (const ws of toRemove) {
+      this.remove(ws);
+      cleanedCount++;
+    }
+
+    if (cleanedCount > 0) {
+      console.log(`[UserManager] Cleaned up ${cleanedCount} zombie connection(s)`);
+    }
+
+    return cleanedCount;
   }
 }

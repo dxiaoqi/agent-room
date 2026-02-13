@@ -8,9 +8,22 @@
  * prominently; signaling messages (responses, system) are shown subtly.
  *
  * Usage:
- *   pnpm run service:cli
- *   pnpm run service:cli -- --name Alice --room general
- *   npx tsx src/service/cli.ts --url ws://server:9000 --name Bob --room dev-ops
+ *   # Using npm (note the "--" separator)
+ *   npm run service:cli -- --name Alice --room general
+ *   npm run service:cli -- --url ws://server:9000 --name Bob
+ *
+ *   # Direct execution
+ *   npx agent-room-cli --name Alice --room general
+ *   npx tsx src/service/cli.ts --url ws://server:9000 --name Bob
+ *
+ *   # Show help
+ *   npx agent-room-cli --help
+ *
+ * Options:
+ *   --url <url>      WebSocket service URL (default: ws://localhost:9000)
+ *   --name <name>    Your display name (default: $USER)
+ *   --room <room>    Room to join (default: general)
+ *   --help, -h       Show this help message
  *
  * Commands:
  *   /help                Show all commands
@@ -33,16 +46,66 @@ import type { ServiceMessage } from "./protocol.js";
 
 // ─── CLI Args ────────────────────────────────────────────────────────
 
-function getArg(name: string, fallback: string): string {
+function parseArgs(): { url: string; name: string; room: string } {
   const args = process.argv.slice(2);
-  const idx = args.indexOf(`--${name}`);
-  return idx !== -1 && args[idx + 1] ? args[idx + 1] : fallback;
+  
+  // Default values
+  let url = "ws://localhost:9000";
+  let name = process.env.USER ?? "user";
+  let room = "general";
+  
+  // Parse --flag value style
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    const nextArg = args[i + 1];
+    
+    if (arg === "--url" && nextArg) {
+      url = nextArg;
+      i++; // Skip next arg
+    } else if (arg === "--name" && nextArg) {
+      name = nextArg;
+      i++; // Skip next arg
+    } else if (arg === "--room" && nextArg) {
+      room = nextArg;
+      i++; // Skip next arg
+    } else if (arg === "--help" || arg === "-h") {
+      console.log(`
+Usage: agent-room-cli [options]
+
+Options:
+  --url <url>      WebSocket service URL (default: ws://localhost:9000)
+  --name <name>    Your display name (default: $USER)
+  --room <room>    Room to join (default: general)
+  --help, -h       Show this help message
+
+Examples:
+  agent-room-cli
+  agent-room-cli --name Alice --room general
+  agent-room-cli --url ws://server:9000 --name Bob --room dev-ops
+
+When using npm run:
+  npm run service:cli -- --name Alice --room general
+  (Note the "--" separator after service:cli)
+`);
+      process.exit(0);
+    } else if (!arg.startsWith("--") && i === 0) {
+      // Legacy positional args: name url room
+      name = arg;
+      if (args[i + 1]) url = args[i + 1];
+      if (args[i + 2]) room = args[i + 2];
+      break;
+    }
+  }
+  
+  // Ensure URL has proper protocol
+  if (!url.startsWith("ws://") && !url.startsWith("wss://")) {
+    url = "ws://" + url;
+  }
+  
+  return { url, name, room };
 }
 
-const URL = getArg("url", "ws://localhost:9000");
-const NAME = getArg("name", process.env.USER ?? "user");
-const ROOM = getArg("room", "general");
-
+const { url: URL, name: NAME, room: ROOM } = parseArgs();
 // ─── Colors ──────────────────────────────────────────────────────────
 
 const R = "\x1b[0m";
@@ -75,6 +138,67 @@ function clearLine() {
 
 function timestamp(): string {
   return new Date().toLocaleTimeString("en-US", { hour12: false });
+}
+
+function getRoleColor(role: string): string {
+  switch (role?.toLowerCase()) {
+    case "owner": return RED;
+    case "admin": return YELLOW;
+    case "moderator": return BLUE;
+    case "member": return GREEN;
+    case "guest": return DIM;
+    default: return "";
+  }
+}
+
+// ─── Mention Parsing ─────────────────────────────────────────────────
+
+/**
+ * Extract @mentions from a message
+ * @username or @"username with spaces"
+ */
+function extractMentions(message: string): string[] {
+  const mentions: string[] = [];
+  // Match @username or @"username with spaces"
+  const mentionRegex = /@([\w\-]+|"[^"]+"|'[^']+')/g;
+  let match;
+  
+  while ((match = mentionRegex.exec(message)) !== null) {
+    let mentioned = match[1];
+    // Remove quotes if present
+    if ((mentioned.startsWith('"') && mentioned.endsWith('"')) ||
+        (mentioned.startsWith("'") && mentioned.endsWith("'"))) {
+      mentioned = mentioned.slice(1, -1);
+    }
+    if (mentioned && !mentions.includes(mentioned)) {
+      mentions.push(mentioned);
+    }
+  }
+  
+  return mentions;
+}
+
+/**
+ * Highlight @mentions in a message
+ */
+function highlightMentions(message: string, currentUser: string): string {
+  // Highlight mentions of current user
+  const mentionRegex = /@([\w\-]+|"[^"]+"|'[^']+')/g;
+  
+  return message.replace(mentionRegex, (match, username) => {
+    let cleanUsername = username;
+    // Remove quotes
+    if ((cleanUsername.startsWith('"') && cleanUsername.endsWith('"')) ||
+        (cleanUsername.startsWith("'") && cleanUsername.endsWith("'"))) {
+      cleanUsername = cleanUsername.slice(1, -1);
+    }
+    
+    // Highlight if it's mentioning current user
+    if (cleanUsername === currentUser) {
+      return `${YELLOW}${BOLD}@${cleanUsername}${R}`;
+    }
+    return `${CYAN}@${cleanUsername}${R}`;
+  });
 }
 
 /** Print a message, clearing prompt if needed, then re-showing it */
@@ -122,9 +246,46 @@ console.log();
 
 const ws = new WebSocket(URL);
 
+// ─── Command Completion ──────────────────────────────────────────────
+
+const COMMANDS = [
+  "/help", "/h",
+  "/join", "/j",
+  "/leave", "/l",
+  "/switch", "/s",
+  "/rooms", "/r",
+  "/members", "/m",
+  "/users", "/u",
+  "/dm", "/d",
+  "/create", "/c",
+  "/history",
+  "/debug",
+  "/role", "/setrole",
+  "/grant",
+  "/myrole", "/whoami",
+  "/permissions", "/perms",
+  "/restrict",
+  "/mention", "/at",
+  "/quit", "/q", "/exit"
+];
+
+function completer(line: string): [string[], string] {
+  // Only complete if the line starts with /
+  if (!line.startsWith("/")) {
+    return [[], line];
+  }
+
+  const hits = COMMANDS.filter((cmd) => cmd.startsWith(line));
+  
+  // Show all commands if no match, otherwise show matches
+  return [hits.length > 0 ? hits : COMMANDS, line];
+}
+
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
+  completer: completer,
+  terminal: true,
 });
 
 // ─── Input Handler ───────────────────────────────────────────────────
@@ -196,13 +357,62 @@ function handleInput(input: string) {
         break;
 
       case "dm":
-      case "d":
+      case "d": {
         if (!parts[1] || !parts[2]) {
           printMsg(`${RED}  Usage: /dm <user> <message>${R}`);
+          printMsg(`${DIM}  Multiple users: /dm user1,user2,user3 <message>${R}`);
+          printMsg(`${DIM}  Array syntax: /dm [user1,user2] <message>${R}`);
           break;
         }
-        sendAction("dm", { to: parts[1], message: parts.slice(2).join(" ") });
+        
+        const recipientsRaw = parts[1];
+        let recipients: string[] = [];
+        let messageStartIndex = 2;
+        
+        // Parse array syntax: [user1,user2] or [user1, user2]
+        if (recipientsRaw.startsWith("[")) {
+          // Find the closing bracket
+          const fullRecipients = parts.slice(1).join(" ");
+          const closeBracket = fullRecipients.indexOf("]");
+          if (closeBracket !== -1) {
+            const userList = fullRecipients.slice(1, closeBracket);
+            recipients = userList.split(",").map(u => u.trim()).filter(u => u);
+            // Find where message starts
+            const afterBracket = fullRecipients.slice(closeBracket + 1).trim();
+            messageStartIndex = parts.length - afterBracket.split(/\s+/).length;
+          } else {
+            printMsg(`${RED}  Invalid array syntax. Use: /dm [user1,user2] message${R}`);
+            break;
+          }
+        } else if (recipientsRaw.includes(",")) {
+          // Comma-separated: user1,user2,user3
+          recipients = recipientsRaw.split(",").map(u => u.trim()).filter(u => u);
+        } else {
+          // Single user
+          recipients = [recipientsRaw];
+        }
+        
+        const message = parts.slice(messageStartIndex).join(" ");
+        
+        if (!message) {
+          printMsg(`${RED}  Message cannot be empty${R}`);
+          break;
+        }
+        
+        if (recipients.length === 1) {
+          // Traditional DM
+          sendAction("dm", { to: recipients[0], message });
+        } else {
+          // Multi-user visible message using permission system
+          sendAction("permission.send_restricted", {
+            room_id: activeRoom,
+            message,
+            visibility: "user_based",
+            allowed_users: recipients,
+          });
+        }
         break;
+      }
 
       case "create":
       case "c":
@@ -223,6 +433,92 @@ function handleInput(input: string) {
         printMsg(`${DIM}  Debug mode: ${showDebug ? "ON — signaling messages visible" : "OFF — signaling hidden"}${R}`);
         break;
 
+      // ── Permission Management ─────────────────────────────────────
+      case "role":
+      case "setrole":
+        if (!parts[1] || !parts[2]) {
+          printMsg(`${RED}  Usage: /role <user> <role>${R}`);
+          printMsg(`${DIM}  Roles: owner, admin, member, guest${R}`);
+          break;
+        }
+        sendAction("permission.set_role", {
+          room_id: activeRoom,
+          user_id: parts[1],
+          role: parts[2].toLowerCase(),
+        });
+        break;
+
+      case "grant":
+        if (!parts[1] || !parts[2]) {
+          printMsg(`${RED}  Usage: /grant <user> <role>${R}`);
+          printMsg(`${DIM}  Roles: admin, member, guest${R}`);
+          break;
+        }
+        sendAction("permission.set_role", {
+          room_id: activeRoom,
+          user_id: parts[1],
+          role: parts[2].toLowerCase(),
+        });
+        break;
+
+      case "myrole":
+      case "whoami":
+        sendAction("permission.get_my_permissions", { room_id: activeRoom });
+        break;
+
+      case "permissions":
+      case "perms":
+        sendAction("permission.get_room_config", { room_id: activeRoom });
+        break;
+
+      case "restrict":
+        if (!parts[1]) {
+          printMsg(`${RED}  Usage: /restrict <message> [visibility] [roles/users]${R}`);
+          printMsg(`${DIM}  visibility: public, role_based, user_based${R}`);
+          printMsg(`${DIM}  Example: /restrict "Admin only" role_based admin${R}`);
+          break;
+        }
+        const restrictMsg = parts.slice(1).join(" ").split(/["']/).filter(s => s.trim())[0];
+        const restrictVisibility = parts[parts.indexOf(restrictMsg.split(" ")[0]) + restrictMsg.split(" ").length + 1] || "role_based";
+        const restrictTarget = parts.slice(parts.indexOf(restrictVisibility) + 1);
+        
+        sendAction("permission.send_restricted", {
+          room_id: activeRoom,
+          message: restrictMsg,
+          visibility: restrictVisibility,
+          allowed_roles: restrictVisibility === "role_based" ? restrictTarget : undefined,
+          allowed_users: restrictVisibility === "user_based" ? restrictTarget : undefined,
+        });
+        break;
+
+      case "mention":
+      case "at":
+        if (!parts[1]) {
+          printMsg(`${RED}  Usage: /mention <user> [message]${R}`);
+          printMsg(`${DIM}  Example: /mention Alice Hello there!${R}`);
+          printMsg(`${DIM}  Or just type: @Alice Hello there!${R}`);
+          break;
+        }
+        // Send message with @mention
+        const mentionUser = parts[1];
+        const mentionMessage = parts.length > 2 
+          ? `@${mentionUser} ${parts.slice(2).join(" ")}`
+          : `@${mentionUser}`;
+        
+        const mentionsList = extractMentions(mentionMessage);
+        
+        send({
+          type: "chat",
+          from: NAME,
+          to: `room:${activeRoom}`,
+          payload: { 
+            message: mentionMessage,
+            room: activeRoom,
+            mentions: mentionsList.length > 0 ? mentionsList : undefined,
+          },
+        });
+        break;
+
       default:
         printMsg(`${RED}  Unknown command: /${cmd}. Type /help for commands.${R}`);
     }
@@ -238,11 +534,18 @@ function handleInput(input: string) {
     return;
   }
 
+  // Extract @mentions from the message
+  const mentions = extractMentions(trimmed);
+
   send({
     type: "chat",
     from: NAME,
     to: `room:${activeRoom}`,
-    payload: { message: trimmed },
+    payload: { 
+      message: trimmed,
+      room: activeRoom,
+      mentions: mentions.length > 0 ? mentions : undefined,
+    },
   });
 
   showPrompt();
@@ -258,8 +561,16 @@ function displayMessage(msg: ServiceMessage) {
     case "chat": {
       const isDm = !!p.dm;
       const room = p.room ?? (msg.to?.startsWith("room:") ? msg.to.slice(5) : null);
-      const message = p.message ?? "";
+      const rawMessage = p.message ?? "";
+      const mentions = p.mentions as string[] | undefined;
       const ts = `${DIM}${timestamp()}${R}`;
+      
+      // Highlight mentions in the message
+      const message = highlightMentions(rawMessage, NAME);
+      
+      // Check if current user is mentioned
+      const isMentioned = mentions?.includes(NAME);
+      const mentionIndicator = isMentioned ? ` ${YELLOW}[@]${R}` : "";
 
       if (isDm) {
         // DM — magenta
@@ -275,9 +586,9 @@ function displayMessage(msg: ServiceMessage) {
           return;
         }
         const roomTag = joinedRooms.size > 1 ? `${BLUE}#${room}${R} ` : "";
-        printMsg(`${ts} ${roomTag}${CYAN}${msg.from}${R}  ${message}`);
+        printMsg(`${ts} ${roomTag}${CYAN}${msg.from}${R}${mentionIndicator}  ${message}`);
       } else {
-        printMsg(`${ts} ${CYAN}${msg.from}${R}  ${message}`);
+        printMsg(`${ts} ${CYAN}${msg.from}${R}${mentionIndicator}  ${message}`);
       }
       break;
     }
@@ -297,6 +608,13 @@ function displayMessage(msg: ServiceMessage) {
 
         case "user.left":
           printMsg(`${DIM}${timestamp()} ← ${p.user_name} left #${p.room_id}${R}`);
+          break;
+
+        case "user.role_changed":
+          const targetName = p.user_name;
+          const newRole = p.new_role;
+          const oldRole = p.old_role;
+          printMsg(`${DIM}${timestamp()} ${YELLOW}⚡${R} ${targetName} role changed: ${getRoleColor(oldRole)}${oldRole}${R} → ${getRoleColor(newRole)}${newRole}${R} in #${p.room_id}${R}`);
           break;
 
         case "room.history": {
@@ -377,6 +695,9 @@ function displayMessage(msg: ServiceMessage) {
           if (success) {
             const room = p.data as any;
             printMsg(`${GREEN}  ✓ Room created: #${room.id}${R}`);
+            printMsg(`${DIM}  → Auto-joining #${room.id}...${R}`);
+            // Auto-join the newly created room
+            sendAction("room.join", { room_id: room.id });
           } else {
             printMsg(`${YELLOW}  ${p.error}${R}`);
           }
@@ -429,6 +750,98 @@ function displayMessage(msg: ServiceMessage) {
           // Silent
           break;
 
+        // ── Permission Management Responses ───────────────────────
+        case "permission.set_role":
+          if (success) {
+            const data = p.data as any;
+            printMsg(`${GREEN}  ✓ Role updated: ${data.userId} → ${data.newRole}${R}`);
+          } else {
+            printMsg(`${RED}  ✗ Failed to set role: ${p.error}${R}`);
+          }
+          break;
+
+        case "permission.get_my_permissions": {
+          if (success) {
+            const data = p.data as any;
+            const role = data.role;
+            const perms = data.permissions;
+            printMsg(`${DIM}  ┌ Your Permissions in #${data.room_id} ────${R}`);
+            printMsg(`  ${BOLD}Role:${R} ${getRoleColor(role)}${role}${R}`);
+            printMsg(`  ${BOLD}Capabilities:${R}`);
+            if (perms) {
+              const categories = {
+                "Messaging": ["send_message", "send_restricted_message"],
+                "Moderation": ["delete_message", "edit_message", "pin_message"],
+                "Management": ["invite_member", "kick_member", "modify_permissions"],
+                "Access": ["view_history", "view_members", "send_dm"]
+              };
+              
+              for (const [category, actions] of Object.entries(categories)) {
+                const relevantPerms = actions.filter(a => perms[a] !== undefined);
+                if (relevantPerms.length > 0) {
+                  printMsg(`    ${BOLD}${category}:${R}`);
+                  for (const perm of relevantPerms) {
+                    const value = perms[perm];
+                    const icon = value ? `${GREEN}✓${R}` : `${DIM}✗${R}`;
+                    const name = perm.replace(/_/g, " ");
+                    printMsg(`      ${icon} ${name}`);
+                  }
+                }
+              }
+            }
+            printMsg(`${DIM}  └──────────────────────────────────${R}`);
+          } else {
+            printMsg(`${RED}  ✗ Failed to get permissions: ${p.error}${R}`);
+          }
+          break;
+        }
+
+        case "permission.get_room_config": {
+          if (success) {
+            const data = p.data as any;
+            const config = data.config;
+            const perms = data.permissions;
+            printMsg(`${DIM}  ┌ Room Configuration #${data.room_id} ───${R}`);
+            if (config) {
+              printMsg(`  ${BOLD}Settings:${R}`);
+              printMsg(`    Default Role: ${getRoleColor(config.defaultRole)}${config.defaultRole}${R}`);
+              printMsg(`    Default Visibility: ${config.defaultVisibility}`);
+              printMsg(`    Message Rate Limit: ${config.messageRateLimit}/min`);
+              if (config.memberHistoryLimit > 0) {
+                printMsg(`    History Limit: ${config.memberHistoryLimit} messages`);
+              }
+            }
+            if (perms) {
+              printMsg(`  ${BOLD}Who Can:${R}`);
+              const actions = {
+                "Send messages": perms.canSendMessage,
+                "Delete messages": perms.canDeleteMessages,
+                "Invite members": perms.canInviteMembers,
+                "Kick members": perms.canKickMembers,
+                "Modify permissions": perms.canModifyPermissions,
+              };
+              for (const [action, roles] of Object.entries(actions)) {
+                if (roles && Array.isArray(roles)) {
+                  const roleStr = roles.map((r: string) => getRoleColor(r) + r + R).join(", ");
+                  printMsg(`    ${action}: ${roleStr}`);
+                }
+              }
+            }
+            printMsg(`${DIM}  └──────────────────────────────────${R}`);
+          } else {
+            printMsg(`${RED}  ✗ Failed to get config: ${p.error}${R}`);
+          }
+          break;
+        }
+
+        case "permission.send_restricted":
+          if (success) {
+            printMsg(`${GREEN}  ✓ Restricted message sent${R}`);
+          } else {
+            printMsg(`${RED}  ✗ Failed to send restricted message: ${p.error}${R}`);
+          }
+          break;
+
         default:
           if (showDebug) {
             printMsg(`${DIM}${timestamp()} [rsp:${action}] ${success ? "ok" : p.error}${R}`);
@@ -466,20 +879,37 @@ function printHelp() {
   printMsg(`
 ${BOLD}  Commands${R}
   ${DIM}─────────────────────────────────────────${R}
+  ${BOLD}Room & Chat${R}
   ${GREEN}/join${R} <room>         Join a room
   ${GREEN}/leave${R} [room]        Leave current or specified room
   ${GREEN}/switch${R} <room>       Switch active room (short: ${DIM}/s${R})
   ${GREEN}/rooms${R}               List all rooms
   ${GREEN}/members${R} [room]      Show room members
   ${GREEN}/users${R}               List online users
-  ${GREEN}/dm${R} <user> <msg>     Send private message
   ${GREEN}/create${R} <id> [name]  Create a new room
   ${GREEN}/history${R}             Show current room history
+
+  ${BOLD}Messaging${R}
+  ${GREEN}/dm${R} <user> <msg>     Send private message
+  ${GREEN}/dm${R} user1,user2 ...  Send to multiple users
+  ${GREEN}/mention${R} <user> ...  Mention a user (@user)
+  ${DIM}Or just type: @username in any message${R}
+
+  ${BOLD}Permission Management${R}
+  ${GREEN}/role${R} <user> <role>  Set user role (owner/admin/member/guest)
+  ${GREEN}/grant${R} <user> <role> Grant role to user (alias)
+  ${GREEN}/myrole${R}              Show your role and permissions
+  ${GREEN}/permissions${R}         Show room permission config
+  ${GREEN}/restrict${R} <msg> ...  Send restricted message (advanced)
+
+  ${BOLD}Other${R}
   ${GREEN}/debug${R}               Toggle signaling visibility
   ${GREEN}/quit${R}                Exit
 
   ${DIM}Type plain text to send to the active room.${R}
-  ${DIM}Short aliases: /j /l /s /r /m /u /d /c /q /h${R}
+  ${DIM}Press TAB to autocomplete commands.${R}
+  ${DIM}Short aliases: /j /l /s /r /m /u /d /c /at /q /h${R}
+  ${DIM}Permission shortcuts: /whoami = /myrole, /perms = /permissions${R}
 `);
 }
 

@@ -31,6 +31,8 @@ export interface ServiceMessage {
 export interface ChatPayload {
   message: string;
   room?: string;           // room ID if sent to a room
+  mentions?: string[];     // user IDs/names mentioned with @ in the message
+  dm?: boolean;            // true if DM
 }
 
 /** action payload — client requests */
@@ -48,7 +50,12 @@ export type ActionType =
   | "room.members"    // list members of a room: { room_id }
   | "dm"              // send DM: { to, message }
   | "users.list"      // list online users
-  | "ping";           // keepalive
+  | "ping"            // keepalive
+  // Permission management actions
+  | "permission.send_restricted"  // send message with visibility control
+  | "permission.set_role"         // set user role: { room_id, user_id, role }
+  | "permission.get_my_permissions" // get own permissions in a room
+  | "permission.get_room_config";   // get room permission configuration
 
 /** response payload — server responses */
 export interface ResponsePayload {

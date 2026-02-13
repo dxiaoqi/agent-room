@@ -104,19 +104,44 @@ export class HttpApi {
           // Check if it's a specific room: /rooms/:id
           if (url.pathname.startsWith("/rooms/")) {
             const roomId = url.pathname.slice(7); // strip "/rooms/"
-            const result = this._rooms.getMembers(roomId);
-            if (result.success) {
-              this._jsonResponse(res, 200, {
-                room_id: roomId,
-                members: result.members,
-              });
+            
+            // Check for /rooms/:id/permissions
+            if (roomId.includes("/permissions")) {
+              const actualRoomId = roomId.split("/")[0];
+              const configResult = this._rooms.getRoomConfig(actualRoomId);
+              if (configResult.success) {
+                this._jsonResponse(res, 200, {
+                  room_id: actualRoomId,
+                  permissions: configResult.permissions,
+                  config: configResult.config,
+                });
+              } else {
+                this._jsonResponse(res, 404, { error: configResult.error });
+              }
             } else {
-              this._jsonResponse(res, 404, { error: result.error });
+              // /rooms/:id - get members
+              const result = this._rooms.getMembers(roomId);
+              if (result.success) {
+                this._jsonResponse(res, 200, {
+                  room_id: roomId,
+                  members: result.members,
+                });
+              } else {
+                this._jsonResponse(res, 404, { error: result.error });
+              }
             }
           } else {
             this._jsonResponse(res, 404, {
               error: "Not found",
-              endpoints: ["/health", "/stats", "/rooms", "/rooms/:id", "/users", "/metrics"],
+              endpoints: [
+                "/health", 
+                "/stats", 
+                "/rooms", 
+                "/rooms/:id", 
+                "/rooms/:id/permissions",
+                "/users", 
+                "/metrics"
+              ],
             });
           }
       }

@@ -103,6 +103,8 @@ export class ServiceWsServer {
     ws.on("error", (err: Error) => {
       log.error("client error", { userId }, err);
       Logger.metrics.increment("service.errors.client");
+      // Also handle disconnect on error to ensure cleanup
+      this._handleDisconnect(ws);
     });
   }
 
@@ -245,7 +247,7 @@ export class ServiceWsServer {
       }
 
       case "room.list": {
-        const rooms = this._rooms.listRooms();
+        const rooms = this._rooms.listRooms(session.id);
         this._send(ws, responseMessage("room.list", true, { rooms }));
         break;
       }
@@ -302,6 +304,138 @@ export class ServiceWsServer {
       // ── Ping ────────────────────────────────────────────────────
       case "ping": {
         this._send(ws, responseMessage("ping", true, { pong: true, time: new Date().toISOString() }));
+        break;
+      }
+
+      // ── Permission Management ───────────────────────────────────
+      case "permission.send_restricted": {
+        this._requireAuth(ws, session, () => {
+          const roomId = payload.room_id as string;
+          const message = payload.message as string;
+          const visibility = payload.visibility as string;
+
+          if (!roomId || !message) {
+            this._send(ws, responseMessage("permission.send_restricted", false, undefined, "room_id and message are required"));
+            return;
+          }
+
+          // Build permission object
+          const permission: any = {
+            visibility: visibility || "public",
+          };
+
+          if (payload.allowed_roles) {
+            permission.allowedRoles = payload.allowed_roles;
+          }
+          
+          // Convert usernames to user IDs
+          if (payload.allowed_users) {
+            const allowedUsers = payload.allowed_users as string[];
+            permission.allowedUsers = allowedUsers.map((nameOrId: string) => {
+              // Try to find user by name first
+              const user = this._users.getByName(nameOrId);
+              return user ? user.id : nameOrId; // Fallback to original if not found
+            });
+          }
+          
+          if (payload.denied_users) {
+            const deniedUsers = payload.denied_users as string[];
+            permission.deniedUsers = deniedUsers.map((nameOrId: string) => {
+              const user = this._users.getByName(nameOrId);
+              return user ? user.id : nameOrId;
+            });
+          }
+          
+          if (payload.expires_in) {
+            const expiresIn = payload.expires_in as number;
+            permission.expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
+          }
+
+          // Send message with permission
+          const result = this._rooms.broadcastChat(roomId, session, message, permission);
+          
+          if (result.success) {
+            this._send(ws, responseMessage("permission.send_restricted", true, { room_id: roomId }));
+          } else {
+            this._send(ws, responseMessage("permission.send_restricted", false, undefined, result.error));
+          }
+        });
+        break;
+      }
+
+      case "permission.set_role": {
+        this._requireAuth(ws, session, () => {
+          const roomId = payload.room_id as string;
+          const targetUserId = payload.user_id as string;
+          const newRole = payload.role as string;
+
+          if (!roomId || !targetUserId || !newRole) {
+            this._send(ws, responseMessage("permission.set_role", false, undefined, "room_id, user_id, and role are required"));
+            return;
+          }
+
+          // Validate role
+          const validRoles = ["owner", "admin", "member", "guest"];
+          if (!validRoles.includes(newRole)) {
+            this._send(ws, responseMessage("permission.set_role", false, undefined, `Invalid role. Must be one of: ${validRoles.join(", ")}`));
+            return;
+          }
+
+          const result = this._rooms.setUserRole(roomId, session.id, targetUserId, newRole as any);
+          
+          if (result.success) {
+            this._send(ws, responseMessage("permission.set_role", true, result.data));
+          } else {
+            this._send(ws, responseMessage("permission.set_role", false, undefined, result.error));
+          }
+        });
+        break;
+      }
+
+      case "permission.get_my_permissions": {
+        this._requireAuth(ws, session, () => {
+          const roomId = payload.room_id as string;
+
+          if (!roomId) {
+            this._send(ws, responseMessage("permission.get_my_permissions", false, undefined, "room_id is required"));
+            return;
+          }
+
+          const result = this._rooms.getUserPermissions(roomId, session.id);
+          
+          if (result.success) {
+            this._send(ws, responseMessage("permission.get_my_permissions", true, {
+              user_id: session.id,
+              room_id: roomId,
+              role: result.role,
+              permissions: result.permissions,
+            }));
+          } else {
+            this._send(ws, responseMessage("permission.get_my_permissions", false, undefined, result.error));
+          }
+        });
+        break;
+      }
+
+      case "permission.get_room_config": {
+        const roomId = payload.room_id as string;
+
+        if (!roomId) {
+          this._send(ws, responseMessage("permission.get_room_config", false, undefined, "room_id is required"));
+          return;
+        }
+
+        const result = this._rooms.getRoomConfig(roomId);
+        
+        if (result.success) {
+          this._send(ws, responseMessage("permission.get_room_config", true, {
+            room_id: roomId,
+            permissions: result.permissions,
+            config: result.config,
+          }));
+        } else {
+          this._send(ws, responseMessage("permission.get_room_config", false, undefined, result.error));
+        }
         break;
       }
 

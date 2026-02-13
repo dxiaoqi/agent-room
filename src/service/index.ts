@@ -38,6 +38,14 @@ function main(): void {
   const userManager = new UserManager();
   const roomManager = new RoomManager(userManager);
 
+  // Cleanup zombie connections every 30 seconds
+  const cleanupInterval = setInterval(() => {
+    const cleaned = userManager.cleanupZombieConnections();
+    if (cleaned > 0) {
+      console.log(`[Service] Periodic cleanup: removed ${cleaned} zombie connection(s)`);
+    }
+  }, 30000); // 30 seconds
+
   // HTTP API
   const httpApi = new HttpApi({
     port: PORT,
@@ -76,6 +84,7 @@ function main(): void {
 
   const shutdown = () => {
     console.log("\n[Service] Shutting down...");
+    clearInterval(cleanupInterval); // Stop cleanup task
     wsServer.close();
     httpServer.close(() => {
       console.log("[Service] Goodbye.");

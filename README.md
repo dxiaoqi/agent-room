@@ -83,6 +83,13 @@ Visit http://localhost:3000, enter server address and username to start chatting
 agent-room-cli --name Alice --room general
 # or
 npx agent-room-cli
+
+# CLI Features:
+# - @mention users: @Alice hello
+# - TAB completion for commands
+# - Multi-user messages: /dm [user1,user2] message
+# - Permission management: /role, /myrole, /permissions
+# - Type /help for all commands
 ```
 
 **Option 3: Integration Test**
@@ -481,6 +488,62 @@ Result:
 - User sees real-time chat interface in terminal
 - Both are in the same room simultaneously
 ```
+
+#### CLI Advanced Features (v0.3.4+)
+
+The CLI client now includes advanced features for better collaboration:
+
+**1. @Mention Users**
+```bash
+# Mention someone in chat
+> @Alice can you help with this?
+> @Bob @Charlie team meeting at 3pm
+
+# Or use command
+> /mention Alice hello there
+
+# Mentioned users see highlighted messages with [@] indicator
+```
+
+**2. TAB Command Completion**
+```bash
+# Press TAB to autocomplete commands
+> /j[TAB]    → /join
+> /me[TAB]   → /members, /mention
+> /[TAB]     → show all 30+ commands
+```
+
+**3. Multi-User Messages**
+```bash
+# Send message to multiple users (room-scoped)
+> /dm [alice, bob, charlie] Team update
+> /dm alice,bob,charlie Quick sync
+
+# Recipients must be in the same room
+# Requires admin/owner permission
+```
+
+**4. Permission Management**
+```bash
+# View your permissions
+> /myrole
+> /permissions
+
+# Set user roles (owner/admin only)
+> /role Alice admin
+> /grant Bob member
+
+# Auto-join created rooms with owner permission
+> /create project-room "Project Room"
+→ Auto-joining #project-room...
+✓ Role: owner
+```
+
+**Quick Reference:**
+- Type `/help` for all commands
+- Use TAB for autocomplete
+- @mention to highlight users
+- Restrict messages with `/dm [users]`
 
 #### MCP Resources
 
